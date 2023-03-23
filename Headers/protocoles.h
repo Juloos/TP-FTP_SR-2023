@@ -1,9 +1,9 @@
 #ifndef TP_FTP_SR_2023_PROTOCOLES_H
 #define TP_FTP_SR_2023_PROTOCOLES_H
 
-// TODO : expliquer notre protocole dans le CR (schéma)
+#include <stdint.h>
 
-#define MAXLEN 4096
+// TODO : expliquer notre protocole dans le CR (schéma)
 
 typedef enum {
     OP_GET,
@@ -11,17 +11,27 @@ typedef enum {
 } Op;
 
 typedef enum {
-    ERREUR_OK,
-    ERREUR_KO
-} Erreur;
+    OK,
+    ERREUR
+} Rep;
 
 typedef struct {
     Op code;
-    char arg[MAXLEN];
+    uint16_t arg_len;
 } Requete;
 
 typedef struct {
-    Erreur code;
+    Rep code;
+    uint16_t res_len;
 } Reponse;
+
+
+void Requete_hton(Requete *req);
+
+void Requete_ntoh(Requete *req);
+
+void Reponse_hton(Reponse *rep);
+
+void Reponse_ntoh(Reponse *rep);
 
 #endif //TP_FTP_SR_2023_PROTOCOLES_H

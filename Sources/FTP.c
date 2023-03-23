@@ -1,5 +1,6 @@
-#include "csapp.h"
-#include "protocoles.h"
+#include <sys/stat.h>
+#include "../Headers/csapp.h"
+#include "../Headers/protocoles.h"
 
 #define PORT 4242
 #define NB_PROC 5
@@ -28,24 +29,36 @@ int creerNfils(int nbFils) {
 }
 
 void server_body(int connfd) {
-    size_t n;
-    char buf[MAXLINE];
     rio_t rio;
     Requete req;
+    char *arg;
     Reponse rep;
     FILE *f;
 
     Rio_readinitb(&rio, connfd);
 
     Rio_readnb(&rio, &req, sizeof(Requete));
+    Requete_ntoh(&req);
+    if (req.arg_len) arg = (char *) Malloc(req.arg_len);
+    Rio_readnb(&rio, arg, req.arg_len);
+
     if (req.code == OP_GET) {
-        if ((f = fopen(req.arg, "r")) != NULL) {
-            rep.code = ERREUR_OK;
+        if ((f = fopen(arg, "r")) != NULL) {
+            struct stat st;
+            stat(arg, &st);
+
+            rep.code = OK;
+            rep.res_len = st.st_size;
+            Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
-            while ((n = fread(buf, 1, MAXLINE, f)) > 0)
-                Rio_writen(connfd, buf, n);
+
+            char *buf = (char *) Malloc(st.st_size);
+            fread(buf, 1, st.st_size, f);
+            Rio_writen(connfd, buf, st.st_size);
         } else {
-            rep.code = ERREUR_KO;
+            rep.code = ERREUR;
+            rep.res_len = 0;
+            Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
         }
     }
