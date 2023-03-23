@@ -15,11 +15,17 @@ CPPFLAGS = -IHeaders
 LIBS += -lpthread
 
 INCLUDE = csapp.h
-OBJS = csapp.o FTP.o #echoclient.o
+OBJS = csapp.o
 
-PROGS = FTP #echoclient
+PROGS = FTP CLIENT
 
 all: $(PROGS)
+
+#FTP: FTP.o $(OBJS)
+#	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
+#CLIENT: CLIENT.o $(OBJS)
+#	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
