@@ -8,28 +8,25 @@
 
 CC = gcc
 CFLAGS = -Wall -Werror
-LDFLAGS =
-
+CPPFLAGS = -IHeaders
 # Note: -lnsl does not seem to work on Mac OS but will
-# probably be necessary on Solaris for linking network-related functions 
+# probably be necessary on Solaris for linking network-related functions
 #LIBS += -lsocket -lnsl -lrt
 LIBS += -lpthread
 
 INCLUDE = csapp.h
-OBJS = csapp.o echo.o
-INCLDIR = -I.
+OBJS = csapp.o FTP.o #echoclient.o
 
-PROGS = echoserveri echoclient 
-
+PROGS = FTP #echoclient
 
 all: $(PROGS)
 
-%.o: %.c $(INCLUDE)
-	$(CC) $(CFLAGS) $(INCLDIR) -c -o $@ $<
-	
+%.o: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
 %: %.o $(OBJS)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 #	$(CC) -o $@ $(LDFLAGS) $(LIBS) $^
-	
+
 clean:
 	rm -f $(PROGS) *.o
