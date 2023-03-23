@@ -12,7 +12,9 @@ typedef enum {
 
 typedef enum {
     OK,
-    ERREUR
+    ERREUR,
+    ERREUR_FICHIER,
+    ERREUR_MEMOIRE
 } Rep;
 
 typedef struct {

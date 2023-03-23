@@ -4,9 +4,15 @@
 
 #define PORT 4242
 
+void handler_SIGPIPE(int sig) {
+    printf("Le serveur a fermé la connexion\n");
+    exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char **argv) {
     int clientfd;
-    char *host, buf[MAXLINE], *arg;
+    char *host, buf[MAXLINE];
+    size_t len;
     rio_t rio;
 
     if (argc != 2) {
@@ -15,24 +21,33 @@ int main(int argc, char **argv) {
     }
     host = argv[1];
 
+    Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);
-    printf("Connected\n");
 
     Rio_readinitb(&rio, clientfd);
-    while (Fgets(buf, MAXLINE, stdin) != NULL) {
-        Requete req = {OP_BYE, 0}; arg = NULL;
+
+    // à placer dans une boucle par la suite
+        printf("ftp> ");
+        Fgets(buf, MAXLINE, stdin);
+        len = strlen(buf) - 1;
+        if (len) buf[len] = '\0';  // Enlever le '\n'
+
+        Requete req = {OP_BYE, 0};
+        char *arg = NULL;
 
         if (strncmp(buf, "get ", 4) == 0) {
             req.code = OP_GET;
-            if (strlen(buf) < 5) {
+            if (len < 5) {
                 fprintf(stderr, "Il manque un argument\n");
-                continue;
+                Close(clientfd);
+                exit(EXIT_FAILURE);
             }
-            req.arg_len = strlen(buf) - 4;
+            req.arg_len = len - 4;
             arg = buf + 4;
         } else if (strncmp(buf, "bye ", 4) != 0) {
-            printf("Commande non implémentée\n");
-            continue;
+            fprintf(stderr, "Commande non implémentée\n");
+            Close(clientfd);
+            exit(EXIT_FAILURE);
         }
 
         Requete_hton(&req);
@@ -49,8 +64,7 @@ int main(int argc, char **argv) {
                         if (rep.res_len) {
                             char *res = (char *) Malloc(rep.res_len);
                             Rio_readnb(&rio, res, rep.res_len);
-                            // write to file
-                            FILE *f = fopen(buf + 4, "w");
+                            FILE *f = fopen(arg, "w");
                             fwrite(res, 1, rep.res_len, f);
                         }
                         break;
@@ -58,10 +72,17 @@ int main(int argc, char **argv) {
                         break;
                 }
                 break;
+            case ERREUR_FICHIER:
+                printf("Serveur: le fichier n'existe pas\n");
+                break;
+            case ERREUR_MEMOIRE:
+                printf("Serveur: erreur de mémoire\n");
+                break;
             case ERREUR:
+                printf("Serveur: erreur\n");
                 break;
         }
-    }
+
     Close(clientfd);
     exit(EXIT_SUCCESS);
 }

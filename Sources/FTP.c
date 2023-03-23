@@ -17,7 +17,7 @@ void handler_SIGINT(int sig) {
     for (int i = 0; i < NB_PROC; i++)
         Kill(ptab[i], SIGKILL);
     for (int i = 0; i < NB_PROC; i++)
-        Waitpid(ptab[i], NULL, 0);
+        Wait(NULL);
     exit(EXIT_SUCCESS);
 }
 
@@ -32,7 +32,7 @@ void server_body(int connfd) {
     rio_t rio;
     Requete req;
     char *arg;
-    Reponse rep;
+    Reponse rep = {OK, 0};
     FILE *f;
 
     Rio_readinitb(&rio, connfd);
@@ -43,24 +43,29 @@ void server_body(int connfd) {
     Rio_readnb(&rio, arg, req.arg_len);
 
     if (req.code == OP_GET) {
-        if ((f = fopen(arg, "r")) != NULL) {
-            struct stat st;
-            stat(arg, &st);
+        printf("Requete: GET %s\n", arg);
 
-            rep.code = OK;
-            rep.res_len = st.st_size;
-            Reponse_hton(&rep);
-            Rio_writen(connfd, &rep, sizeof(Reponse));
-
-            char *buf = (char *) Malloc(st.st_size);
-            fread(buf, 1, st.st_size, f);
-            Rio_writen(connfd, buf, st.st_size);
-        } else {
-            rep.code = ERREUR;
-            rep.res_len = 0;
+        if ((f = fopen(arg, "r")) == NULL) {
+            rep.code = ERREUR_FICHIER;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
         }
+
+        struct stat st;
+        stat(arg, &st);
+
+        char *buf;
+        if ((buf = (char *) Malloc(st.st_size)) == NULL) {
+            rep.code = ERREUR_MEMOIRE;
+            Reponse_hton(&rep);
+            Rio_writen(connfd, &rep, sizeof(Reponse));
+        }
+        fread(buf, 1, st.st_size, f);
+
+        rep.res_len = st.st_size;
+        Reponse_hton(&rep);
+        Rio_writen(connfd, &rep, sizeof(Reponse));
+        Rio_writen(connfd, buf, st.st_size);
     }
 }
 
