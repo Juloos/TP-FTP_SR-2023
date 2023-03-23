@@ -1,4 +1,4 @@
-#include "csapp.h"
+#include "Headers/csapp.h"
 
 #define PORT 4242
 #define NB_PROC 5
@@ -45,7 +45,6 @@ int main(int argc, char **argv) {
     listenfd = Open_listenfd(PORT);
 
     if (creerNfils(NB_PROC) == 0) {
-        printf("Child %d\n", getpid());
         // Child
         Signal(SIGCHLD, SIG_DFL);
         Signal(SIGINT, SIG_DFL);
@@ -67,6 +66,6 @@ int main(int argc, char **argv) {
 
     // Parent
     while (1) {
-        pause();
+        Pause();
     }
 }
