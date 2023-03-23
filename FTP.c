@@ -1,4 +1,5 @@
 #include "Headers/csapp.h"
+#include "protocoles.h"
 
 #define PORT 4242
 #define NB_PROC 5
@@ -6,16 +7,16 @@
 
 pid_t ptab[NB_PROC];
 
-void HandlerChild(int sig) {
+void handler_SIGCHLD(int sig) {
     while (Waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-void HandlerKill(int sig) {
+void handler_SIGINT(int sig) {
     Signal(SIGCHLD, SIG_DFL);
-    for (int i = 0; i < NB_PROC; i++) {
+    for (int i = 0; i < NB_PROC; i++)
         Kill(ptab[i], SIGKILL);
+    for (int i = 0; i < NB_PROC; i++)
         Waitpid(ptab[i], NULL, 0);
-    }
     exit(EXIT_SUCCESS);
 }
 
@@ -24,6 +25,30 @@ int creerNfils(int nbFils) {
         if ((ptab[i] = Fork()) == 0)
             return 0;
     return 1;
+}
+
+void server_body(int connfd) {
+    size_t n;
+    char buf[MAXLINE];
+    rio_t rio;
+    Requete req;
+    Reponse rep;
+    FILE *f;
+
+    Rio_readinitb(&rio, connfd);
+
+    Rio_readnb(&rio, &req, sizeof(Requete));
+    if (req.code == OP_GET) {
+        if ((f = fopen(req.arg, "r")) != NULL) {
+            rep.code = ERREUR_OK;
+            Rio_writen(connfd, &rep, sizeof(Reponse));
+            while ((n = fread(buf, 1, MAXLINE, f)) > 0)
+                Rio_writen(connfd, buf, n);
+        } else {
+            rep.code = ERREUR_KO;
+            Rio_writen(connfd, &rep, sizeof(Reponse));
+        }
+    }
 }
 
 int main(int argc, char **argv) {
@@ -39,8 +64,8 @@ int main(int argc, char **argv) {
         exit(EXIT_SUCCESS);
     }
 
-    Signal(SIGCHLD, HandlerChild);
-    Signal(SIGINT, HandlerKill);
+    Signal(SIGCHLD, handler_SIGCHLD);
+    Signal(SIGINT, handler_SIGINT);
 
     listenfd = Open_listenfd(PORT);
 
@@ -59,8 +84,9 @@ int main(int argc, char **argv) {
 
             printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
 
+            server_body(connfd);
+
             Close(connfd);
-            exit(EXIT_SUCCESS);
         }
     }
 

@@ -6,11 +6,7 @@
 #define MAXLEN 4096
 
 typedef enum {
-    OP_LS,
-    OP_CD,
-    OP_PWD,
     OP_GET,
-    OP_PUT,
     OP_BYE
 } Op;
 
@@ -25,7 +21,7 @@ typedef struct {
 } Requete;
 
 typedef struct {
-    Erreur code; // 0 = OK, 1 = KO
+    Erreur code;
 } Reponse;
 
 #endif //TP_FTP_SR_2023_PROTOCOLES_H
