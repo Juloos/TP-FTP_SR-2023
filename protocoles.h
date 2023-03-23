@@ -1,6 +1,8 @@
 #ifndef TP_FTP_SR_2023_PROTOCOLES_H
 #define TP_FTP_SR_2023_PROTOCOLES_H
 
+// TODO : expliquer notre protocole dans le CR (schéma)
+
 #define MAXLEN 4096
 
 typedef enum {
