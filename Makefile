@@ -3,6 +3,12 @@
 # Disable implicit rules
 .SUFFIXES:
 
+SRCDIR=Sources
+OBJDIR=Objects
+HEADDIR=Headers
+SERVDIR=Server
+CLIENTDIR=Client
+
 # Keep intermediate files
 #.PRECIOUS: %.o
 
@@ -14,25 +20,25 @@ CPPFLAGS = -IHeaders
 #LIBS += -lsocket -lnsl -lrt
 LIBS += -lpthread
 
-INCLUDE = csapp.h
-OBJS = csapp.o
+SRCS1 = $(wildcard $(SRCDIR)/*[^CLIENT].c)
+OBJS1 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS1))
 
-PROGS = FTP CLIENT
+SRCS2 = $(wildcard $(SRCDIR)/[^FTP]*.c)
+OBJS2 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS2))
+
+PROGS = $(SERVDIR)/FTP $(CLIENTDIR)/CLIENT
 
 all: $(PROGS)
 
-#FTP: FTP.o $(OBJS)
-#	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+$(SERVDIR)/FTP: $(OBJS1)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
-#CLIENT: CLIENT.o $(OBJS)
-#	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+$(CLIENTDIR)/CLIENT: $(OBJS2)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
-%.o: %.c
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
-%: %.o $(OBJS)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
-#	$(CC) -o $@ $(LDFLAGS) $(LIBS) $^
-
-clean:
-	rm -f $(PROGS) *.o
+clean :
+	-@rm -r $(OBJDIR)/*.o $(SRCDIR)/*~ $(SERVDIR)/* $(CLIENTDIR)/* 2>/dev/null || true
+	@echo All is removed
