@@ -6,8 +6,8 @@
 SRCDIR=Sources
 OBJDIR=Objects
 HEADDIR=Headers
-SERVDIR=Bin
-CLIENTDIR=Bin
+SERVDIR=Server
+CLIENTDIR=Client
 
 # create directories if they don't exist
 $(shell mkdir -p $(OBJDIR) $(SERVDIR) $(CLIENTDIR))
