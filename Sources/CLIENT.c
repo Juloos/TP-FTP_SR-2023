@@ -72,13 +72,22 @@ int main(int argc, char **argv) {
                 switch (req.code) {
                     case OP_GET:
                         if (rep.res_len) {
-                            char *res = (char *) malloc(rep.res_len);
-                            Rio_readn(clientfd, res, rep.res_len);
-                            printf("%u bytes transferred in %lu sec\n", rep.res_len, time(NULL) - start);
                             strcat(filename, arg);
-                            int f = open(filename, O_CREAT | O_WRONLY | O_TRUNC);
-                            write(f, res, rep.res_len);
-                            close(f);
+                            int f = Open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0700);
+                            unsigned int taille = rep.res_len;
+                            char *res = (char *) malloc(TAILLE_BLOCK);
+                            while(taille > TAILLE_BLOCK) {
+                                Rio_readn(clientfd, res, TAILLE_BLOCK);
+                                Write(f, res, TAILLE_BLOCK);
+                                taille -= TAILLE_BLOCK;
+                            }
+                            // Dernier paquet (taille < TAILLE_BLOCK)
+                            Rio_readn(clientfd, res, taille);
+                            Write(f, res, taille);
+                            free(res);
+
+                            printf("%u bytes transferred in %lu sec\n", rep.res_len, time(NULL) - start);
+                            Close(f);
                             filename[strlen(filename) - len] = '\0';
                         }
                         break;

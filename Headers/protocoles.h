@@ -13,6 +13,8 @@
 #define REP_ERREUR_FICHIER 3
 #define REP_ERREUR_MEMOIRE 4
 
+#define TAILLE_BLOCK 8192
+
 typedef struct {
     char code;
     uint32_t arg_len;

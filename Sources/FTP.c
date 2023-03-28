@@ -66,20 +66,35 @@ void server_body(int connfd) {
         struct stat st;
         fstat(f, &st);
 
-        char *buf;
-        if ((buf = (char *) malloc(st.st_size)) == NULL) {
+        // Envoie du fichier en plusieurs paquets
+        unsigned int taille = st.st_size;
+
+        rep.res_len = st.st_size;
+
+        char *buf = malloc(TAILLE_BLOCK);
+        if (buf == NULL) {
             rep.code = REP_ERREUR_MEMOIRE;
+            // Envoie de la structure de réponse (code + taille)
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
             return;
+        } else {
+            // Envoie de la structure de réponse (code + taille)
+            Reponse_hton(&rep);
+            Rio_writen(connfd, &rep, sizeof(Reponse));
+            while (taille > 0) {
+                if (taille < TAILLE_BLOCK) {
+                    // Dernier paquet
+                    Read(f, buf, taille);
+                    Rio_writen(connfd, buf, taille);
+                    break;
+                }
+                Read(f, buf, TAILLE_BLOCK);
+                Rio_writen(connfd, buf, TAILLE_BLOCK);
+                taille -= TAILLE_BLOCK;
+            }
         }
-        read(f, buf, st.st_size);
-        close(f);
-
-        rep.res_len = st.st_size;
-        Reponse_hton(&rep);
-        Rio_writen(connfd, &rep, sizeof(Reponse));
-        Rio_writen(connfd, buf, st.st_size);
+        Close(f);
     }
 }
 
