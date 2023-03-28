@@ -1,5 +1,6 @@
 #include <arpa/inet.h>
 #include "../Headers/protocoles.h"
+#include "csapp.h"
 
 
 void Requete_hton(Requete *req) {
@@ -16,4 +17,44 @@ void Reponse_hton(Reponse *rep) {
 
 void Reponse_ntoh(Reponse *rep) {
     rep->res_len = ntohl(rep->res_len);
+}
+
+void reception_fichier(int clientfd, int f, unsigned int taille) {
+    char *res = (char *) malloc(TAILLE_BLOCK);
+    while(taille > TAILLE_BLOCK) {
+        Rio_readn(clientfd, res, TAILLE_BLOCK);
+        Write(f, res, TAILLE_BLOCK);
+        taille -= TAILLE_BLOCK;
+    }
+    // Dernier paquet (taille < TAILLE_BLOCK)
+    Rio_readn(clientfd, res, taille);
+    Write(f, res, taille);
+    free(res);
+}
+
+void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille) {
+    char *res = (char *) malloc(TAILLE_BLOCK);
+    if (res == NULL) {
+        rep.code = REP_ERREUR_MEMOIRE;
+        // Envoie de la structure de réponse (code + taille)
+        Reponse_hton(&rep);
+        Rio_writen(clientfd, &rep, sizeof(Reponse));
+        return;
+    } else {
+        // Envoie de la structure de réponse (code + taille)
+        Reponse_hton(&rep);
+        Rio_writen(clientfd, &rep, sizeof(Reponse));
+        while (taille > 0) {
+            if (taille < TAILLE_BLOCK) {
+                // Dernier paquet
+                Read(f, res, taille);
+                Rio_writen(clientfd, res, taille);
+                break;
+            }
+            Read(f, res, TAILLE_BLOCK);
+            Rio_writen(clientfd, res, TAILLE_BLOCK);
+            taille -= TAILLE_BLOCK;
+        }
+    }
+    free(res);
 }

@@ -71,29 +71,8 @@ void server_body(int connfd) {
 
         rep.res_len = st.st_size;
 
-        char *buf = malloc(TAILLE_BLOCK);
-        if (buf == NULL) {
-            rep.code = REP_ERREUR_MEMOIRE;
-            // Envoie de la structure de réponse (code + taille)
-            Reponse_hton(&rep);
-            Rio_writen(connfd, &rep, sizeof(Reponse));
-            return;
-        } else {
-            // Envoie de la structure de réponse (code + taille)
-            Reponse_hton(&rep);
-            Rio_writen(connfd, &rep, sizeof(Reponse));
-            while (taille > 0) {
-                if (taille < TAILLE_BLOCK) {
-                    // Dernier paquet
-                    Read(f, buf, taille);
-                    Rio_writen(connfd, buf, taille);
-                    break;
-                }
-                Read(f, buf, TAILLE_BLOCK);
-                Rio_writen(connfd, buf, TAILLE_BLOCK);
-                taille -= TAILLE_BLOCK;
-            }
-        }
+        envoie_fichier(rep, connfd, f, taille);
+
         Close(f);
     }
 }
