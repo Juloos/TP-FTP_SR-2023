@@ -14,12 +14,22 @@ int main(int argc, char **argv) {
     char *host, buf[MAXLINE];
     size_t len;
     rio_t rio;
+    char client_wd[256];
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <host>\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
     host = argv[1];
+
+    // Get the working directory of the client
+    if (getcwd(client_wd, sizeof(client_wd)) == NULL) {
+        fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");
+        exit(EXIT_FAILURE);
+    }
+    // Remove BIN/ from the path and replace it with CLIENT/
+    client_wd[strlen(client_wd) - 3] = '\0';
+    strcat(client_wd, "CLIENT/");
 
     Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);
@@ -64,7 +74,10 @@ int main(int argc, char **argv) {
                         if (rep.res_len) {
                             char *res = (char *) Malloc(rep.res_len);
                             Rio_readnb(&rio, res, rep.res_len);
-                            FILE *f = fopen(arg, "w");
+                            char *filename = strlen(arg) + 1 + client_wd;
+                            strcpy(filename, client_wd);
+                            strcat(filename, arg);
+                            FILE *f = fopen(filename, "w");
                             fwrite(res, 1, rep.res_len, f);
                         }
                         break;

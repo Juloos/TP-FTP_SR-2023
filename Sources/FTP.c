@@ -34,6 +34,15 @@ void server_body(int connfd) {
     char *arg;
     Reponse rep = {OK, 0};
     FILE *f;
+    char serveur_wd[256];
+
+    if (getcwd(serveur_wd, sizeof(serveur_wd)) == NULL) {
+        fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");
+        exit(EXIT_FAILURE);
+    }
+    // Remove BIN/ from the path and replace it with SERVER/
+    serveur_wd[strlen(serveur_wd) - 3] = '\0';
+    strcat(serveur_wd, "SERVER/");
 
     Rio_readinitb(&rio, connfd);
 
@@ -45,7 +54,11 @@ void server_body(int connfd) {
     if (req.code == OP_GET) {
         printf("Requete: GET %s\n", arg);
 
-        if ((f = fopen(arg, "r")) == NULL) {
+        char *filename = (char *) Malloc(strlen(serveur_wd) + strlen(arg) + 1);
+        strcpy(filename, serveur_wd);
+        strcat(filename, arg);
+
+        if ((f = fopen(filename, "r")) == NULL) {
             rep.code = ERREUR_FICHIER;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
