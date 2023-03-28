@@ -65,7 +65,7 @@ void server_body(int connfd) {
         }
 
         struct stat st;
-        stat(arg, &st);
+        stat(filename, &st);
 
         char *buf;
         if ((buf = (char *) Malloc(st.st_size)) == NULL) {
