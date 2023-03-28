@@ -27,9 +27,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");
         exit(EXIT_FAILURE);
     }
-    // Remove BIN/ from the path and replace it with CLIENT/
-    filename[strlen(filename) - 3] = '\0';
-    strcat(filename, ".client/");
+    strcat(filename, "/.client/");
 
     Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);

@@ -40,9 +40,7 @@ void server_body(int connfd) {
         fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");
         exit(EXIT_FAILURE);
     }
-    // Remove BIN/ from the path and replace it with SERVER/
-    filename[strlen(filename) - 3] = '\0';
-    strcat(filename, ".server/");
+    strcat(filename, "/.server/");
 
     Rio_readinitb(&rio, connfd);
 
@@ -55,6 +53,8 @@ void server_body(int connfd) {
         printf("Requete: GET %s\n", arg);
 
         strcat(filename, arg);
+        fprintf(stderr, "name = %s\n", filename);
+
         if ((f = open(filename, O_RDONLY)) == -1) {
             rep.code = REP_ERREUR_FICHIER;
             Reponse_hton(&rep);
