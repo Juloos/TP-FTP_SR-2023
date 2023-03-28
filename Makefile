@@ -41,6 +41,14 @@ $(BINDIR)/CLIENT: $(OBJS2)
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
+ftp:
+	@make > /dev/null
+	$(BINDIR)/FTP
+
+client:
+	@make > /dev/null
+	$(BINDIR)/CLIENT localhost
+
 clean :
 	-@rm -r $(OBJDIR)/*.o $(SRCDIR)/*~ $(BINDIR)/* 2>/dev/null || true
 	@echo All is removed
