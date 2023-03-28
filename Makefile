@@ -9,7 +9,7 @@ OBJDIR=Objects
 HEADDIR=Headers
 
 # create directories if they don't exist
-$(shell mkdir -p $(OBJDIR) $(BINDIR))
+$(shell mkdir -p $(OBJDIR) $(BINDIR) .client .server)
 
 # Keep intermediate files
 #.PRECIOUS: %.o

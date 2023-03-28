@@ -42,7 +42,7 @@ void server_body(int connfd) {
     }
     // Remove BIN/ from the path and replace it with SERVER/
     filename[strlen(filename) - 3] = '\0';
-    strcat(filename, "SERVER/");
+    strcat(filename, ".server/");
 
     Rio_readinitb(&rio, connfd);
 
