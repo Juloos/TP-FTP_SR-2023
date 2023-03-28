@@ -3,6 +3,7 @@
 # Disable implicit rules
 .SUFFIXES:
 
+BINDIR=Bin
 SRCDIR=Sources
 OBJDIR=Objects
 HEADDIR=Headers
@@ -10,7 +11,7 @@ SERVDIR=Server
 CLIENTDIR=Client
 
 # create directories if they don't exist
-$(shell mkdir -p $(OBJDIR) $(SERVDIR) $(CLIENTDIR))
+$(shell mkdir -p $(OBJDIR) $(SERVDIR) $(CLIENTDIR) $(BINDIR))
 
 # Keep intermediate files
 #.PRECIOUS: %.o
@@ -29,19 +30,19 @@ OBJS1 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS1))
 SRCS2 = $(wildcard $(SRCDIR)/[^FTP]*.c)
 OBJS2 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS2))
 
-PROGS = $(SERVDIR)/FTP $(CLIENTDIR)/CLIENT
+PROGS = $(BINDIR)/FTP $(BINDIR)/CLIENT
 
 all: $(PROGS)
 
-$(SERVDIR)/FTP: $(OBJS1)
+$(BINDIR)/FTP: $(OBJS1)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
-$(CLIENTDIR)/CLIENT: $(OBJS2)
+$(BINDIR)/CLIENT: $(OBJS2)
 	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
 clean :
-	-@rm -r $(OBJDIR)/*.o $(SRCDIR)/*~ $(SERVDIR)/* $(CLIENTDIR)/* 2>/dev/null || true
+	-@rm -r $(OBJDIR)/*.o $(SRCDIR)/*~ $(BINDIR)/* 2>/dev/null || true
 	@echo All is removed
