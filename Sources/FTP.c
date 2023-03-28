@@ -53,7 +53,6 @@ void server_body(int connfd) {
         printf("Requete: GET %s\n", arg);
 
         strcat(filename, arg);
-        fprintf(stderr, "name = %s\n", filename);
 
         if ((f = open(filename, O_RDONLY)) == -1) {
             rep.code = REP_ERREUR_FICHIER;
