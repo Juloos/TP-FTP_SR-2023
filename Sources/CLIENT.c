@@ -57,12 +57,13 @@ int main(int argc, char **argv) {
             Close(clientfd);
             exit(EXIT_FAILURE);
         }
+        len = ++req.arg_len;  // Avoid endianness issues with self, and add 1 to the length for the '\0'
 
         time_t start = time(NULL);
-        len = req.arg_len;  // Avoid endianess issues with self
         Requete_hton(&req);
         Rio_writen(clientfd, &req, sizeof(Requete));
-        Rio_writen(clientfd, arg, len);
+        if (arg != NULL && len > 0)
+            Rio_writen(clientfd, arg, len);
 
         Reponse rep;
         Rio_readn(clientfd, &rep, sizeof(Reponse));
@@ -76,8 +77,9 @@ int main(int argc, char **argv) {
                             Rio_readn(clientfd, res, rep.res_len);
                             printf("%u bytes transferred in %lu sec\n", rep.res_len, time(NULL) - start);
                             strcat(filename, arg);
-                            int f = open(filename, O_CREAT | O_WRONLY | O_TRUNC);
+                            int f = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 700);
                             write(f, res, rep.res_len);
+                            free(res);
                             close(f);
                             filename[strlen(filename) - len] = '\0';
                         }

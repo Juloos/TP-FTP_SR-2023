@@ -4,7 +4,6 @@
 
 #define PORT 4242
 #define NB_PROC 5
-#define MAX_NAME_LEN 256
 
 pid_t ptab[NB_PROC];
 
@@ -79,16 +78,15 @@ void server_body(int connfd) {
         rep.res_len = st.st_size;
         Reponse_hton(&rep);
         Rio_writen(connfd, &rep, sizeof(Reponse));
-        Rio_writen(connfd, buf, st.st_size);
+        if (st.st_size > 0)
+            Rio_writen(connfd, buf, st.st_size);
+        free(buf);
     }
 }
 
 int main(int argc, char **argv) {
     int listenfd, connfd;
     struct sockaddr_in clientaddr;
-    char client_ip_string[INET_ADDRSTRLEN];
-    char client_hostname[MAX_NAME_LEN];
-
     socklen_t clientlen = (socklen_t) sizeof(clientaddr);
 
     if (argc != 1) {
@@ -107,14 +105,6 @@ int main(int argc, char **argv) {
         Signal(SIGINT, SIG_DFL);
         while (1) {
             while ((connfd = Accept(listenfd, (SA *) &clientaddr, &clientlen)) == -1);
-
-            /* determine the name of the client */
-            Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAX_NAME_LEN, 0, 0, 0);
-
-            /* determine the textual representation of the client's IP address */
-            Inet_ntop(AF_INET, &clientaddr.sin_addr, client_ip_string, INET_ADDRSTRLEN);
-
-            printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
 
             server_body(connfd);
 
