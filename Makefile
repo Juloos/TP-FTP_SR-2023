@@ -7,17 +7,15 @@ BINDIR=Bin
 SRCDIR=Sources
 OBJDIR=Objects
 HEADDIR=Headers
-SERVDIR=Server
-CLIENTDIR=Client
 
 # create directories if they don't exist
-$(shell mkdir -p $(OBJDIR) $(SERVDIR) $(CLIENTDIR) $(BINDIR))
+$(shell mkdir -p $(OBJDIR) $(BINDIR))
 
 # Keep intermediate files
 #.PRECIOUS: %.o
 
 CC = gcc
-CFLAGS = -Wall -Werror
+CFLAGS = -Wall -Werror -g
 CPPFLAGS = -IHeaders
 # Note: -lnsl does not seem to work on Mac OS but will
 # probably be necessary on Solaris for linking network-related functions

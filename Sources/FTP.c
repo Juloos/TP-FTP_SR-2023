@@ -32,8 +32,8 @@ void server_body(int connfd) {
     rio_t rio;
     Requete req;
     char *arg;
-    Reponse rep = {OK, 0};
-    FILE *f;
+    Reponse rep = {REP_OK, 0};
+    int f;
 
     Rio_readinitb(&rio, connfd);
 
@@ -45,22 +45,25 @@ void server_body(int connfd) {
     if (req.code == OP_GET) {
         printf("Requete: GET %s\n", arg);
 
-        if ((f = fopen(arg, "r")) == NULL) {
-            rep.code = ERREUR_FICHIER;
+        if ((f = open(arg, O_RDONLY)) == -1) {
+            rep.code = REP_ERREUR_FICHIER;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
+            return;
         }
 
         struct stat st;
-        stat(arg, &st);
+        fstat(f, &st);
 
         char *buf;
-        if ((buf = (char *) Malloc(st.st_size)) == NULL) {
-            rep.code = ERREUR_MEMOIRE;
+        if ((buf = (char *) malloc(st.st_size)) == NULL) {
+            rep.code = REP_ERREUR_MEMOIRE;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
+            return;
         }
-        fread(buf, 1, st.st_size, f);
+        read(f, buf, st.st_size);
+        close(f);
 
         rep.res_len = st.st_size;
         Reponse_hton(&rep);

@@ -1,6 +1,7 @@
 #include "../Headers/csapp.h"
 #include "../Headers/protocoles.h"
 #include <string.h>
+#include <time.h>
 
 #define PORT 4242
 
@@ -13,7 +14,6 @@ int main(int argc, char **argv) {
     int clientfd;
     char *host, buf[MAXLINE];
     size_t len;
-    rio_t rio;
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <host>\n", argv[0]);
@@ -23,8 +23,6 @@ int main(int argc, char **argv) {
 
     Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);
-
-    Rio_readinitb(&rio, clientfd);
 
     // à placer dans une boucle par la suite
         printf("ftp> ");
@@ -50,35 +48,39 @@ int main(int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
 
+        time_t start = time(NULL);
+        len = req.arg_len;  // Avoid endianess issues with self
         Requete_hton(&req);
         Rio_writen(clientfd, &req, sizeof(Requete));
-        Rio_writen(clientfd, arg, req.arg_len);
+        Rio_writen(clientfd, arg, len);
 
         Reponse rep;
-        Rio_readnb(&rio, &rep, sizeof(Reponse));
+        Rio_readn(clientfd, &rep, sizeof(Reponse));
         Reponse_ntoh(&rep);
         switch (rep.code) {
-            case OK:
+            case REP_OK:
                 switch (req.code) {
                     case OP_GET:
                         if (rep.res_len) {
-                            char *res = (char *) Malloc(rep.res_len);
-                            Rio_readnb(&rio, res, rep.res_len);
-                            FILE *f = fopen(arg, "w");
-                            fwrite(res, 1, rep.res_len, f);
+                            char *res = (char *) malloc(rep.res_len);
+                            Rio_readn(clientfd, res, rep.res_len);
+                            printf("%u bytes transferred in %lu sec\n", rep.res_len, time(NULL) - start);
+                            int f = open(arg, O_CREAT | O_WRONLY | O_TRUNC);
+                            write(f, res, rep.res_len);
+                            close(f);
                         }
                         break;
                     case OP_BYE:
                         break;
                 }
                 break;
-            case ERREUR_FICHIER:
+            case REP_ERREUR_FICHIER:
                 printf("Serveur: le fichier n'existe pas\n");
                 break;
-            case ERREUR_MEMOIRE:
+            case REP_ERREUR_MEMOIRE:
                 printf("Serveur: erreur de mémoire\n");
                 break;
-            case ERREUR:
+            case REP_ERREUR:
                 printf("Serveur: erreur\n");
                 break;
         }

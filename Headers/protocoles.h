@@ -5,26 +5,22 @@
 
 // TODO : expliquer notre protocole dans le CR (schéma)
 
-typedef enum {
-    OP_GET,
-    OP_BYE
-} Op;
+#define OP_GET 1
+#define OP_BYE 2
 
-typedef enum {
-    OK,
-    ERREUR,
-    ERREUR_FICHIER,
-    ERREUR_MEMOIRE
-} Rep;
+#define REP_OK 1
+#define REP_ERREUR 2
+#define REP_ERREUR_FICHIER 3
+#define REP_ERREUR_MEMOIRE 4
 
 typedef struct {
-    Op code;
-    uint16_t arg_len;
+    char code;
+    uint32_t arg_len;
 } Requete;
 
 typedef struct {
-    Rep code;
-    uint16_t res_len;
+    char code;
+    uint32_t res_len;
 } Reponse;
 
 
