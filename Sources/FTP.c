@@ -53,6 +53,7 @@ int server_body(int connfd) {
         return 2;
     }
 
+    // Lecture du nom du fichier
     if (req.arg_len) arg = (char *) Malloc(req.arg_len);
     Rio_readnb(&rio, arg, req.arg_len);
 
@@ -75,7 +76,20 @@ int server_body(int connfd) {
         // Envoie du fichier en plusieurs paquets
         unsigned int taille = st.st_size;
 
-        rep.res_len = st.st_size;
+        if (req.cursor > st.st_size) {
+            rep.code = REP_ERREUR_CURSEUR;
+            Reponse_hton(&rep);
+            Rio_writen(connfd, &rep, sizeof(Reponse));
+            return 1;
+        } else if (req.cursor == st.st_size) {
+            rep.code = REP_FICHIER_EXISTE;
+            Reponse_hton(&rep);
+            Rio_writen(connfd, &rep, sizeof(Reponse));
+            return 1;
+        } else if (req.cursor > 0) {
+            Lseek(f, req.cursor, SEEK_SET);
+            taille -= req.cursor;
+        }
 
         envoie_fichier(rep, connfd, f, taille);
 

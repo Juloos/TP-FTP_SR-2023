@@ -5,10 +5,12 @@
 
 void Requete_hton(Requete *req) {
     req->arg_len = htonl(req->arg_len);
+    req->cursor = htonl(req->cursor);
 }
 
 void Requete_ntoh(Requete *req) {
     req->arg_len = ntohl(req->arg_len);
+    req->cursor = ntohl(req->cursor);
 }
 
 void Reponse_hton(Reponse *rep) {
@@ -21,7 +23,7 @@ void Reponse_ntoh(Reponse *rep) {
 
 void reception_fichier(int clientfd, int f, unsigned int taille) {
     char *res = (char *) malloc(TAILLE_BLOCK);
-    while(taille > TAILLE_BLOCK) {
+    while (taille > TAILLE_BLOCK) {
         Rio_readn(clientfd, res, TAILLE_BLOCK);
         Write(f, res, TAILLE_BLOCK);
         taille -= TAILLE_BLOCK;

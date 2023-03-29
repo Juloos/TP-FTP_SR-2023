@@ -10,11 +10,20 @@ void handler_SIGPIPE(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+float time_diff(struct timeval *start, struct timeval *end)
+{
+    return (end->tv_sec - start->tv_sec) + 1e-6*(end->tv_usec - start->tv_usec);
+}
+
 int main(int argc, char **argv) {
     int clientfd;
     char *host, buf[MAXLINE];
     size_t len;
     char filename[MAXLINE];
+    int f;
+
+    struct timeval start;
+    struct timeval end;
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <host>\n", argv[0]);
@@ -33,13 +42,13 @@ int main(int argc, char **argv) {
     clientfd = Open_clientfd(host, PORT);
 
     // à placer dans une boucle par la suite
-    while(1) {
+    while (1) {
         printf("ftp> ");
         Fgets(buf, MAXLINE, stdin);
         len = strlen(buf) - 1;
         if (len) buf[len] = '\0';  // Enlever le '\n'
 
-        Requete req = {OP_BYE, 0};
+        Requete req = {OP_BYE, 0, 0};
         char *arg = NULL;
 
 
@@ -66,10 +75,26 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        time_t start = time(NULL);
+        //time_t start = time(NULL);
+        gettimeofday(&start, NULL);
         len = req.arg_len;  // Avoid endianess issues with self
+
+        strcat(filename, arg);
+
+        // Si le fichier existe déjà, on se place à la fin
+        if (access(filename, F_OK) != -1) {
+            fprintf(stderr, "Le fichier existe déjà\n"); // Debug
+            f = Open(filename, O_APPEND, 0700);
+            // On récupère la taille du fichier pour deplacer le curseur du serveur
+            req.cursor = Lseek(f, 0, SEEK_END);
+        } else {
+            f = Open(filename, O_CREAT | O_WRONLY, 0700);
+        }
+        filename[strlen(filename) - len] = '\0';
         Requete_hton(&req);
+        // Envoie de la structure requête
         Rio_writen(clientfd, &req, sizeof(Requete));
+        // Envoie du nom du fichier
         Rio_writen(clientfd, arg, len);
 
         Reponse rep;
@@ -80,13 +105,11 @@ int main(int argc, char **argv) {
                 switch (req.code) {
                     case OP_GET:
                         if (rep.res_len) {
-                            strcat(filename, arg);
-                            int f = Open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0700);
-                            unsigned int taille = rep.res_len;
+                            unsigned int taille = rep.res_len - req.cursor;
                             reception_fichier(clientfd, f, taille);
-                            printf("%u bytes transferred in %lu sec\n", rep.res_len, time(NULL) - start);
+                            gettimeofday(&end, NULL);
+                            printf("%u bytes transferred in %f sec\n", rep.res_len - req.cursor, time_diff(&start, &end));
                             Close(f);
-                            filename[strlen(filename) - len] = '\0';
                         }
                         break;
                     case OP_BYE:
@@ -102,6 +125,12 @@ int main(int argc, char **argv) {
                 break;
             case REP_ERREUR:
                 printf("Serveur: erreur\n");
+                break;
+            case REP_FICHIER_EXISTE:
+                printf("Serveur: le fichier existe déjà en entier\n");
+                break;
+            case REP_ERREUR_CURSEUR:
+                printf("Serveur: erreur de curseur\n");
                 break;
         }
     }
