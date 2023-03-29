@@ -42,6 +42,7 @@ int main(int argc, char **argv) {
         Requete req = {OP_BYE, 0};
         char *arg = NULL;
 
+
         if (strncmp(buf, "get ", 4) == 0) {
             req.code = OP_GET;
             if (len < 5) {
@@ -57,6 +58,9 @@ int main(int argc, char **argv) {
             Rio_writen(clientfd, &req, sizeof(Requete));
             Close(clientfd);
             exit(EXIT_SUCCESS);
+        } else if (strncmp(buf, "get", 3) == 0 && len == 3) {
+            fprintf(stderr, "Il manque un argument\n");
+            continue;
         } else {
             fprintf(stderr, "Commande inconnue\n");
             continue;
