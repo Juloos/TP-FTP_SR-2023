@@ -28,7 +28,7 @@ int creerNfils(int nbFils) {
     return 1;
 }
 
-void server_body(int connfd) {
+int server_body(int connfd) {
     rio_t rio;
     Requete req;
     char *arg;
@@ -46,6 +46,13 @@ void server_body(int connfd) {
 
     Rio_readnb(&rio, &req, sizeof(Requete));
     Requete_ntoh(&req);
+
+    if (req.code == OP_BYE) {
+        printf("Un client s'est déconnecté\n");
+        Close(connfd);
+        return 2;
+    }
+
     if (req.arg_len) arg = (char *) Malloc(req.arg_len);
     Rio_readnb(&rio, arg, req.arg_len);
 
@@ -58,7 +65,7 @@ void server_body(int connfd) {
             rep.code = REP_ERREUR_FICHIER;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
-            return;
+            return 1;
         }
         filename[strlen(filename) - strlen(arg)] = '\0';
 
@@ -74,6 +81,7 @@ void server_body(int connfd) {
 
         Close(f);
     }
+    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -109,12 +117,11 @@ int main(int argc, char **argv) {
 
             printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
 
-            server_body(connfd);
-
-            Close(connfd);
+            while (1) {
+                if (server_body(connfd) == 2) break;
+            }
         }
     }
-
     // Parent
     while (1) {
         Pause();

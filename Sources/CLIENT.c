@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
     clientfd = Open_clientfd(host, PORT);
 
     // à placer dans une boucle par la suite
+    while(1) {
         printf("ftp> ");
         Fgets(buf, MAXLINE, stdin);
         len = strlen(buf) - 1;
@@ -45,15 +46,20 @@ int main(int argc, char **argv) {
             req.code = OP_GET;
             if (len < 5) {
                 fprintf(stderr, "Il manque un argument\n");
-                Close(clientfd);
-                exit(EXIT_FAILURE);
+                continue;
             }
             req.arg_len = len - 4;
             arg = buf + 4;
-        } else if (strncmp(buf, "bye ", 4) != 0) {
-            fprintf(stderr, "Commande non implémentée\n");
+        } else if (strncmp(buf, "bye ", 4) == 0 || strncmp(buf, "bye", 3) == 0) {
+            req.code = OP_BYE;
+            fprintf(stderr, "Commande bye reçue\n");
+            Requete_hton(&req);
+            Rio_writen(clientfd, &req, sizeof(Requete));
             Close(clientfd);
-            exit(EXIT_FAILURE);
+            exit(EXIT_SUCCESS);
+        } else {
+            fprintf(stderr, "Commande inconnue\n");
+            continue;
         }
 
         time_t start = time(NULL);
@@ -80,7 +86,8 @@ int main(int argc, char **argv) {
                         }
                         break;
                     case OP_BYE:
-                        break;
+                        Close(clientfd);
+                        exit(EXIT_SUCCESS);
                 }
                 break;
             case REP_ERREUR_FICHIER:
@@ -93,6 +100,5 @@ int main(int argc, char **argv) {
                 printf("Serveur: erreur\n");
                 break;
         }
-    Close(clientfd);
-    exit(EXIT_SUCCESS);
+    }
 }
