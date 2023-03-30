@@ -44,31 +44,22 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
 
 void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille) {
     fprintf(stderr, "Envoi du fichier (taille = %d)\n", taille);
-    char *res = (char *) malloc(TAILLE_BLOCK);
-    if (res == NULL) {
-        rep.code = REP_ERREUR_MEMOIRE;
-        // Envoie de la structure de réponse (code + taille)
-        Reponse_hton(&rep);
-        rio_writen(clientfd, &rep, sizeof(Reponse));
-        return;
-    } else {
-        // Envoie de la structure de réponse (code + taille)
-        Reponse_hton(&rep);
-        rio_writen(clientfd, &rep, sizeof(Reponse));
-        while (taille > 0) {
-            fprintf(stderr, "taille = %d\n", taille);
-            if (taille < TAILLE_BLOCK) {
-                fprintf(stderr, "Envoi du dernier paquet (taille = %d)\n", taille);
-                // Dernier paquet
-                read(f, res, taille);
-                rio_writen(clientfd, res, taille);
-                break;
-            }
-            fprintf(stderr, "Envoi d'un paquet (taille = %d)\n", TAILLE_BLOCK);
-            read(f, res, TAILLE_BLOCK);
-            rio_writen(clientfd, res, TAILLE_BLOCK);
-            taille -= TAILLE_BLOCK;
+    char res[TAILLE_BLOCK];
+    // Envoie de la structure de réponse (code + taille)
+    Reponse_hton(&rep);
+    rio_writen(clientfd, &rep, sizeof(Reponse));
+    while (taille > 0) {
+        fprintf(stderr, "taille = %d\n", taille);
+        if (taille < TAILLE_BLOCK) {
+            fprintf(stderr, "Envoi du dernier paquet (taille = %d)\n", taille);
+            // Dernier paquet
+            read(f, res, taille);
+            rio_writen(clientfd, res, taille);
+            break;
         }
+        fprintf(stderr, "Envoi d'un paquet (taille = %d)\n", TAILLE_BLOCK);
+        read(f, res, TAILLE_BLOCK);
+        rio_writen(clientfd, res, TAILLE_BLOCK);
+        taille -= TAILLE_BLOCK;
     }
-    free(res);
 }
