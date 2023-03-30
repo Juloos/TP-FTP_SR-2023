@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
             case REP_ERREUR:
                 printf("Serveur: erreur\n");
                 break;
-            case REP_FICHIER_EXISTE:
+            case REP_FICHIER_EXISTE_ENTIER:
                 printf("Serveur: le fichier existe déjà en entier\n");
                 break;
             case REP_ERREUR_CURSEUR:
