@@ -12,6 +12,8 @@ float time_diff(struct timeval *start, struct timeval *end) {
     return (end->tv_sec - start->tv_sec) + 1e-6 * (end->tv_usec - start->tv_usec);
 }
 
+// TODO mettre des r minuscules / traitant sigpipe / valeur de retour readn
+
 void envoyer_requete(int clientfd, Requete *req, char *arg) {
     Requete_hton(req);
     Rio_writen(clientfd, req, sizeof(Requete));

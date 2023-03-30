@@ -28,7 +28,7 @@ void Reponse_ntoh(Reponse *rep) {
 }
 
 void reception_fichier(int clientfd, int f, unsigned int taille) {
-    char *res = (char *) malloc(TAILLE_BLOCK);
+    char res[TAILLE_BLOCK];
     fprintf(stderr, "Réception du fichier (taille = %d)\n", taille);
     while (taille >= TAILLE_BLOCK) {
         fprintf(stderr, "Réception d'un paquet (taille = %d)\n", TAILLE_BLOCK);
@@ -40,7 +40,6 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
     fprintf(stderr, "Réception du dernier paquet (taille = %d)\n", taille);
     rio_readn(clientfd, res, taille);
     Write(f, res, taille);
-    free(res);
 }
 
 void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille) {
