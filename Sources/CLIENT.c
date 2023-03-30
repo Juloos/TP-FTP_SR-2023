@@ -113,7 +113,6 @@ size_t prompt(char *buf, int couleur) {
 int lire_commande(char *buf, Requete *req, int couleur) {
     size_t len = prompt(buf, couleur);
 
-    init_Requete(req);
     int argi = (int) len;
 
     if (strncmp(buf, "get ", 4) == 0) {
@@ -184,6 +183,9 @@ int main(int argc, char **argv) {
     int couleur = 31;
 
     while (1) {
+        init_Requete(&req);
+        // A voir parce que c'est inutile de l'initialiser ici (rep)
+        init_Reponse(&rep);
         if ((argi = lire_commande(buf, &req, couleur)) == -1) {
             if ((couleur = (couleur + 1 - 31) % 18 + 31) == 34) { couleur++; };
             continue;
@@ -192,7 +194,7 @@ int main(int argc, char **argv) {
             Close(clientfd);
             exit(EXIT_SUCCESS);
         }
-        if ((couleur = (couleur + 1 - 31) % 18 + 31) == 34) { couleur++; };
+        if ((couleur = (couleur + 1 - 31) % 18 + 31) == 34) couleur++;
         arg = buf + argi;
 
         gettimeofday(&start, NULL);

@@ -9,6 +9,11 @@ void init_Requete(Requete *req) {
     req->cursor = 0;
 }
 
+void init_Reponse(Reponse *rep) {
+    rep->code = REP_OK;
+    rep->res_len = 0;
+}
+
 void Requete_hton(Requete *req) {
     req->arg_len = htonl(req->arg_len);
     req->cursor = htonl(req->cursor);

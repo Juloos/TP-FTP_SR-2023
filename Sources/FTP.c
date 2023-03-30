@@ -38,9 +38,11 @@ int creerNfils(int nbFils) {
 int server_body(int connfd) {
     Requete req;
     char *arg;
-    Reponse rep = {REP_OK, 0};
+    Reponse rep;
     int f;
     char filename[MAXLINE];
+
+    init_Reponse(&rep);
 
     if (getcwd(filename, sizeof(filename)) == NULL) {
         fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");

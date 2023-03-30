@@ -31,6 +31,8 @@ typedef struct {
 // Remplie la structure avec des valeurs par défaut
 void init_Requete(Requete *req);
 
+void init_Reponse(Reponse *rep);
+
 void Requete_hton(Requete *req);
 
 void Requete_ntoh(Requete *req);
