@@ -184,8 +184,6 @@ int main(int argc, char **argv) {
 
     while (1) {
         init_Requete(&req);
-        // A voir parce que c'est inutile de l'initialiser ici (rep)
-        init_Reponse(&rep);
         if ((argi = lire_commande(buf, &req, couleur)) == -1) {
             if ((couleur = (couleur + 1 - 31) % 18 + 31) == 34) { couleur++; };
             continue;
