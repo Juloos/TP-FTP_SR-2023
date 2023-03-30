@@ -22,6 +22,10 @@ CPPFLAGS = -IHeaders
 #LIBS += -lsocket -lnsl -lrt
 LIBS += -lpthread
 
+ifdef DEBUG
+	CPPFLAGS+=-DDEBUG
+endif
+
 SRCS1 = $(wildcard $(SRCDIR)/*[^CLIENT].c)
 OBJS1 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS1))
 

@@ -55,14 +55,14 @@ int server_body(int connfd) {
     }
     Requete_ntoh(&req);
 
-    fprintf(stderr, "Req: %d\n", req.code); // Debug
-
     // Lecture du nom du fichier
     if (req.arg_len) arg = (char *) Malloc(req.arg_len);
     Rio_readn(connfd, arg, req.arg_len);
 
     if (req.code == OP_GET) {
-        printf("Requete: GET %s\n", arg);
+#ifdef DEBUG
+        fprintf(stderr, "Requete: GET %s\n", arg);
+#endif
 
         strcat(filename, arg);
 
@@ -80,9 +80,6 @@ int server_body(int connfd) {
         // Envoie du fichier en plusieurs paquets
         unsigned int taille = st.st_size;
 
-        fprintf(stderr, "Ici\n");
-        fprintf(stderr, "rep.code = %d\n", rep.code);
-
         if (req.cursor > st.st_size) {
             fprintf(stderr, "Erreur: curseur > taille du fichier\n");
             rep.code = REP_ERREUR_CURSEUR;
@@ -95,8 +92,6 @@ int server_body(int connfd) {
             taille -= req.cursor;
         }
         rep.res_len = taille;
-
-        fprintf(stderr, "rep.code = %d\n", rep.code);
 
         envoie_fichier(rep, connfd, f, taille);
 
@@ -141,6 +136,7 @@ int main(int argc, char **argv) {
             printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
 
             while (1) {
+                /* Si le client ferme la connexion par un bye ou une erreur */
                 if (server_body(connfd) == 2 || sigpipe) break;
             }
         }

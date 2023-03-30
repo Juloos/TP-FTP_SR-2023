@@ -12,18 +12,24 @@ float time_diff(struct timeval *start, struct timeval *end) {
     return (end->tv_sec - start->tv_sec) + 1e-6 * (end->tv_usec - start->tv_usec);
 }
 
-// TODO mettre des r minuscules / traitant sigpipe / valeur de retour readn
-
 void envoyer_requete(int clientfd, Requete *req, char *arg) {
+#ifdef DEBUG
+    fprintf(stderr, "Client: envoi de la requête %d, arg_len = %d, cursor = %d\n", req->code, req->arg_len, req->cursor);
+#endif
     Requete_hton(req);
-    Rio_writen(clientfd, req, sizeof(Requete));
+    rio_writen(clientfd, req, sizeof(Requete));
     Requete_ntoh(req);
     if (arg != NULL && req->arg_len > 0)
-        Rio_writen(clientfd, arg, req->arg_len);
+        rio_writen(clientfd, arg, req->arg_len);
 }
 
 int interprete_reponse(int clientfd, Reponse *rep) {
-    Rio_readn(clientfd, rep, sizeof(Reponse));
+    if (rio_readn(clientfd, rep, sizeof(Reponse)) < 0) {
+#ifdef DEBUG
+        fprintf(stderr, "Serveur: erreur de lecture\n");
+#endif
+        return -1;
+    }
     Reponse_ntoh(rep);
     switch (rep->code) {
         case REP_OK:
@@ -38,13 +44,16 @@ int interprete_reponse(int clientfd, Reponse *rep) {
             printf("Serveur: erreur\n");
             break;
         case REP_ERREUR_CURSEUR:
-            printf("Serveur: erreur de curseur\n");
+            printf("Serveur: erreur de curseur (reprise du transfère)\n");
             break;
     }
-    return -1;
+    return -2;
 }
 
 void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, struct timeval start) {
+#ifdef DEBUG
+    fprintf(stderr, "Client: exécution de la requête %d, arg_len = %d, cursor = %d\n", req->code, req->arg_len, req->cursor);
+#endif
     struct timeval end;
     int file = -1;
 
@@ -53,14 +62,14 @@ void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, s
             if (rep->res_len) {
                 // Nom du fichier temporaire tant qu'il n'est pas complet
                 char tmpname[MAXLINE];
-                fprintf(stderr, "before : %s\n", pathname);
                 strcpy(tmpname, pathname);
                 strcat(tmpname, ".");
                 strcat(tmpname, filename);
                 // Nom du fichier final
                 strcat(pathname, filename);
-                fprintf(stderr, "after : %s\n", pathname);
-
+#ifdef DEBUG
+                fprintf(stderr, "filename = %s\n", pathname);
+#endif
                 // req->cursor modifié dans lire_commande
                 if (req->cursor > 0) {
                     // On reprend la transmission
@@ -74,7 +83,7 @@ void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, s
                 Close(file);
 
                 gettimeofday(&end, NULL);
-                printf("%u bytes transferred in %f sec\n", rep->res_len, time_diff(&start, &end));
+                printf("%u bytes transferred in %.3f sec\n", rep->res_len, time_diff(&start, &end));
 
                 if (rename(tmpname, pathname) == -1) {
                     perror("rename");
@@ -91,16 +100,18 @@ void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, s
     }
 }
 
-size_t prompt(char *buf) {
-    printf("ftp> ");
+size_t prompt(char *buf, int couleur) {
+    printf("\033[%dm", couleur);
+    printf("\033[4mftp>\033[00m");
+    printf(" ");
     Fgets(buf, MAXLINE, stdin);
     size_t len = strlen(buf) - 1;
     if (len) buf[len] = '\0';  // Enlever le '\n'
     return len;
 }
 
-int lire_commande(char *buf, Requete *req) {
-    size_t len = prompt(buf);
+int lire_commande(char *buf, Requete *req, int couleur) {
+    size_t len = prompt(buf, couleur);
 
     init_Requete(req);
     int argi = (int) len;
@@ -127,7 +138,7 @@ int lire_commande(char *buf, Requete *req) {
         }
         pathname[strlen(pathname) - strlen(buf + argi) - 1] = '\0';
 
-    } else if (strncmp(buf, "bye", 3) == 0) {
+    } else if (strncmp(buf, "bye", 3) == 0 && len == 3) {
         req->code = OP_BYE;
         fprintf(stderr, "Commande bye reçue\n");
         return -2;
@@ -138,7 +149,6 @@ int lire_commande(char *buf, Requete *req) {
         fprintf(stderr, "Commande inconnue\n");
         return -1;
     }
-
     return argi;
 }
 
@@ -162,28 +172,33 @@ int main(int argc, char **argv) {
     }
     host = argv[1];
 
-    if (getcwd(pathname, sizeof(pathname)) == NULL) {                               //  -|
-        fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");  //   |
-        exit(EXIT_FAILURE);                                                            //   |> Get the working directory of
-    }                                                                                        //   |  the client program
-    strcat(pathname, "/.client/");                                                 //  -|
+    /* Get the working directory of the program */
+    if (getcwd(pathname, sizeof(pathname)) == NULL) {
+        fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");
+        exit(EXIT_FAILURE);
+    }
+    strcat(pathname, "/.client/");
 
     Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);
+    int couleur = 31;
 
     while (1) {
-        if ((argi = lire_commande(buf, &req)) == -1) {
+        if ((argi = lire_commande(buf, &req, couleur)) == -1) {
+            if ((couleur = (couleur + 1 - 31) % 18 + 31) == 34) { couleur++; };
             continue;
         } else if (argi == -2) {
             // Bye reçu
             Close(clientfd);
             exit(EXIT_SUCCESS);
         }
+        if ((couleur = (couleur + 1 - 31) % 18 + 31) == 34) { couleur++; };
         arg = buf + argi;
 
         gettimeofday(&start, NULL);
         envoyer_requete(clientfd, &req, arg);
 
+        /* Erreur avec rio_readn */
         if (interprete_reponse(clientfd, &rep) == -1) {
             Close(clientfd);
             exit(EXIT_FAILURE);
