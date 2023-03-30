@@ -2,6 +2,11 @@
 #include "../Headers/protocoles.h"
 
 
+void init_Requete(Requete *req) {
+    req->code = OP_BYE;
+    req->arg_len = 0;
+}
+
 void Requete_hton(Requete *req) {
     req->arg_len = htonl(req->arg_len);
 }

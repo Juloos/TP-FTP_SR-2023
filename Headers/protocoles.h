@@ -26,6 +26,9 @@ typedef struct {
 } Reponse;
 
 
+// Remplie la structure avec des valeurs par défaut
+void init_Requete(Requete *req);
+
 void Requete_hton(Requete *req);
 
 void Requete_ntoh(Requete *req);
