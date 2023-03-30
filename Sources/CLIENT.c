@@ -75,24 +75,11 @@ int main(int argc, char **argv) {
             continue;
         }
 
-        //time_t start = time(NULL);
-        gettimeofday(&start, NULL);
-        len = req.arg_len;  // Avoid endianess issues with self
-
+        // Partie pour tester l'existance du fichier
         strcat(filename, arg);
 
-        fprintf(stderr, "filename: %s\n", filename);
-
-        // Si le fichier existe déjà, on se place à la fin
-        if (access(filename, F_OK) != -1) {
-            fprintf(stderr, "Le fichier existe déjà\n"); // Debug
-            f = Open(filename, O_APPEND, 0700);
-            // On récupère la taille du fichier pour deplacer le curseur du serveur
-            req.cursor = Lseek(f, 0, SEEK_END);
-        } else {
-            f = Open(filename, O_CREAT | O_WRONLY, 0700);
-        }
-        filename[strlen(filename) - len] = '\0';
+        gettimeofday(&start, NULL);
+        len = req.arg_len;  // Avoid endianess issues with self
         Requete_hton(&req);
         // Envoie de la structure requête
         Rio_writen(clientfd, &req, sizeof(Requete));
@@ -102,19 +89,19 @@ int main(int argc, char **argv) {
         Reponse rep;
         Rio_readn(clientfd, &rep, sizeof(Reponse));
         Reponse_ntoh(&rep);
-        fprintf(stderr, "Reponse reçue: %d\n", rep.code); // Debug
         switch (rep.code) {
             case REP_OK:
                 switch (req.code) {
                     case OP_GET:
                         fprintf(stderr, "Taille à recevoir = %u\n", rep.res_len);
                         if (rep.res_len) {
-                            unsigned int taille = rep.res_len - req.cursor;
-                            fprintf(stderr, "Taille à envoyer = %u\n", taille);
+                            f = Open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0700);
+                            unsigned int taille = rep.res_len;
                             reception_fichier(clientfd, f, taille);
                             gettimeofday(&end, NULL);
-                            printf("%u bytes transferred in %f sec\n", rep.res_len - req.cursor, time_diff(&start, &end));
+                            printf("%u bytes transferred in %f sec\n", rep.res_len, time_diff(&start, &end));
                             Close(f);
+                            filename[strlen(filename) - len] = '\0';
                         }
                         break;
                     case OP_BYE:
