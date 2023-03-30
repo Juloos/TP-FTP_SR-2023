@@ -3,6 +3,12 @@
 #include "csapp.h"
 
 
+void init_Requete(Requete *req) {
+    req->code = OP_BYE;
+    req->arg_len = 0;
+    req->cursor = 0;
+}
+
 void Requete_hton(Requete *req) {
     req->arg_len = htonl(req->arg_len);
     req->cursor = htonl(req->cursor);
@@ -26,13 +32,13 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
     fprintf(stderr, "Réception du fichier (taille = %d)\n", taille);
     while (taille >= TAILLE_BLOCK) {
         fprintf(stderr, "Réception d'un paquet (taille = %d)\n", TAILLE_BLOCK);
-        Rio_readn(clientfd, res, TAILLE_BLOCK);
+        rio_readn(clientfd, res, TAILLE_BLOCK);
         Write(f, res, TAILLE_BLOCK);
         taille -= TAILLE_BLOCK;
     }
     // Dernier paquet (taille < TAILLE_BLOCK)
     fprintf(stderr, "Réception du dernier paquet (taille = %d)\n", taille);
-    Rio_readn(clientfd, res, taille);
+    rio_readn(clientfd, res, taille);
     Write(f, res, taille);
     free(res);
 }
@@ -44,24 +50,24 @@ void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille) {
         rep.code = REP_ERREUR_MEMOIRE;
         // Envoie de la structure de réponse (code + taille)
         Reponse_hton(&rep);
-        Rio_writen(clientfd, &rep, sizeof(Reponse));
+        rio_writen(clientfd, &rep, sizeof(Reponse));
         return;
     } else {
         // Envoie de la structure de réponse (code + taille)
         Reponse_hton(&rep);
-        Rio_writen(clientfd, &rep, sizeof(Reponse));
+        rio_writen(clientfd, &rep, sizeof(Reponse));
         while (taille > 0) {
             fprintf(stderr, "taille = %d\n", taille);
             if (taille < TAILLE_BLOCK) {
                 fprintf(stderr, "Envoi du dernier paquet (taille = %d)\n", taille);
                 // Dernier paquet
-                Read(f, res, taille);
-                Rio_writen(clientfd, res, taille);
+                read(f, res, taille);
+                rio_writen(clientfd, res, taille);
                 break;
             }
             fprintf(stderr, "Envoi d'un paquet (taille = %d)\n", TAILLE_BLOCK);
-            Read(f, res, TAILLE_BLOCK);
-            Rio_writen(clientfd, res, TAILLE_BLOCK);
+            read(f, res, TAILLE_BLOCK);
+            rio_writen(clientfd, res, TAILLE_BLOCK);
             taille -= TAILLE_BLOCK;
         }
     }

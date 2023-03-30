@@ -6,10 +6,12 @@
 #define NB_PROC 5
 #define MAX_NAME_LEN 256
 
+int volatile sigpipe = 0;
+
 pid_t ptab[NB_PROC];
 
 void handler_SIGCHLD(int sig) {
-    while (Waitpid(-1, NULL, WNOHANG) > 0);
+    while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
 void handler_SIGINT(int sig) {
@@ -21,6 +23,11 @@ void handler_SIGINT(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+void handler_SIGPIPE(int sig) {
+    printf("Le client a fermé la connexion\n");
+    sigpipe = 1;
+}
+
 int creerNfils(int nbFils) {
     for (int i = 0; i < nbFils; i++)
         if ((ptab[i] = Fork()) == 0)
@@ -29,7 +36,6 @@ int creerNfils(int nbFils) {
 }
 
 int server_body(int connfd) {
-    rio_t rio;
     Requete req;
     char *arg;
     Reponse rep = {REP_OK, 0};
@@ -42,22 +48,18 @@ int server_body(int connfd) {
     }
     strcat(filename, "/.server/");
 
-    Rio_readinitb(&rio, connfd);
-
-    Rio_readnb(&rio, &req, sizeof(Requete));
-    Requete_ntoh(&req);
-
-    fprintf(stderr, "Req: %d\n", req.code); // Debug
-
-    if (req.code == OP_BYE) {
+    if (rio_readn(connfd, &req, sizeof(Requete)) == 0) {
         printf("Un client s'est déconnecté\n");
         Close(connfd);
         return 2;
     }
+    Requete_ntoh(&req);
+
+    fprintf(stderr, "Req: %d\n", req.code); // Debug
 
     // Lecture du nom du fichier
     if (req.arg_len) arg = (char *) Malloc(req.arg_len);
-    Rio_readnb(&rio, arg, req.arg_len);
+    Rio_readn(connfd, arg, req.arg_len);
 
     if (req.code == OP_GET) {
         printf("Requete: GET %s\n", arg);
@@ -85,13 +87,7 @@ int server_body(int connfd) {
             fprintf(stderr, "Erreur: curseur > taille du fichier\n");
             rep.code = REP_ERREUR_CURSEUR;
             Reponse_hton(&rep);
-            Rio_writen(connfd, &rep, sizeof(Reponse));
-            return 1;
-        } else if (req.cursor == st.st_size) {
-            fprintf(stderr, "Erreur: curseur = taille du fichier\n");
-            rep.code = REP_FICHIER_EXISTE;
-            Reponse_hton(&rep);
-            Rio_writen(connfd, &rep, sizeof(Reponse));
+            rio_writen(connfd, &rep, sizeof(Reponse));
             return 1;
         } else if (req.cursor > 0) {
             fprintf(stderr, "Curseur = %d\n", req.cursor);
@@ -131,7 +127,9 @@ int main(int argc, char **argv) {
         // Child
         Signal(SIGCHLD, SIG_DFL);
         Signal(SIGINT, SIG_DFL);
+        Signal(SIGPIPE, handler_SIGPIPE);
         while (1) {
+            sigpipe = 0;
             while ((connfd = Accept(listenfd, (SA *) &clientaddr, &clientlen)) == -1);
 
             /* determine the name of the client */
@@ -143,7 +141,7 @@ int main(int argc, char **argv) {
             printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
 
             while (1) {
-                if (server_body(connfd) == 2) break;
+                if (server_body(connfd) == 2 || sigpipe) break;
             }
         }
     }

@@ -12,22 +12,24 @@
 #define REP_ERREUR 2
 #define REP_ERREUR_FICHIER 3
 #define REP_ERREUR_MEMOIRE 4
-#define REP_FICHIER_EXISTE_ENTIER 5
-#define REP_ERREUR_CURSEUR 6
+#define REP_ERREUR_CURSEUR 5
 
 #define TAILLE_BLOCK 8192
 
 typedef struct {
-    char code;
+    uint8_t code;
     uint32_t arg_len;
     uint32_t cursor;
 } Requete;
 
 typedef struct {
-    char code;
+    uint8_t code;
     uint32_t res_len;
 } Reponse;
 
+
+// Remplie la structure avec des valeurs par défaut
+void init_Requete(Requete *req);
 
 void Requete_hton(Requete *req);
 
