@@ -43,6 +43,7 @@ void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, t
                 Rio_readn(clientfd, res, rep->res_len);
                 printf("%u bytes transferred in %lu sec\n", rep->res_len, time(NULL) - req_timestamp);
                 strcat(pathname, filename);
+                printf("File saved as %s\n", pathname);
                 int f = open(pathname, O_CREAT | O_WRONLY | O_TRUNC, 700);
                 write(f, res, rep->res_len);
                 free(res);
@@ -107,8 +108,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");  //   |
         exit(EXIT_FAILURE);                                                     //   |> Get the working directory of
     }                                                                           //   |  the client program
-    pathname[strlen(pathname) - 3] = '\0';                                      //   |
-    strcat(pathname, ".client/");                                               //  -|
+    strcat(pathname, "/.client/");                                              //  -|
 
     Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);
