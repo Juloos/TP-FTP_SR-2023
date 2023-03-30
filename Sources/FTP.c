@@ -47,6 +47,8 @@ int server_body(int connfd) {
     Rio_readnb(&rio, &req, sizeof(Requete));
     Requete_ntoh(&req);
 
+    fprintf(stderr, "Req: %d\n", req.code); // Debug
+
     if (req.code == OP_BYE) {
         printf("Un client s'est déconnecté\n");
         Close(connfd);
@@ -76,20 +78,29 @@ int server_body(int connfd) {
         // Envoie du fichier en plusieurs paquets
         unsigned int taille = st.st_size;
 
+        fprintf(stderr, "Ici\n");
+        fprintf(stderr, "rep.code = %d\n", rep.code);
+
         if (req.cursor > st.st_size) {
+            fprintf(stderr, "Erreur: curseur > taille du fichier\n");
             rep.code = REP_ERREUR_CURSEUR;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
             return 1;
         } else if (req.cursor == st.st_size) {
+            fprintf(stderr, "Erreur: curseur = taille du fichier\n");
             rep.code = REP_FICHIER_EXISTE;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
             return 1;
         } else if (req.cursor > 0) {
+            fprintf(stderr, "Curseur = %d\n", req.cursor);
             Lseek(f, req.cursor, SEEK_SET);
             taille -= req.cursor;
         }
+        rep.res_len = taille;
+
+        fprintf(stderr, "rep.code = %d\n", rep.code);
 
         envoie_fichier(rep, connfd, f, taille);
 

@@ -81,6 +81,8 @@ int main(int argc, char **argv) {
 
         strcat(filename, arg);
 
+        fprintf(stderr, "filename: %s\n", filename);
+
         // Si le fichier existe déjà, on se place à la fin
         if (access(filename, F_OK) != -1) {
             fprintf(stderr, "Le fichier existe déjà\n"); // Debug
@@ -100,12 +102,15 @@ int main(int argc, char **argv) {
         Reponse rep;
         Rio_readn(clientfd, &rep, sizeof(Reponse));
         Reponse_ntoh(&rep);
+        fprintf(stderr, "Reponse reçue: %d\n", rep.code); // Debug
         switch (rep.code) {
             case REP_OK:
                 switch (req.code) {
                     case OP_GET:
+                        fprintf(stderr, "Taille à recevoir = %u\n", rep.res_len);
                         if (rep.res_len) {
                             unsigned int taille = rep.res_len - req.cursor;
+                            fprintf(stderr, "Taille à envoyer = %u\n", taille);
                             reception_fichier(clientfd, f, taille);
                             gettimeofday(&end, NULL);
                             printf("%u bytes transferred in %f sec\n", rep.res_len - req.cursor, time_diff(&start, &end));
