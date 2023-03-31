@@ -81,8 +81,6 @@ void server_body(int connfd) {
 
 int main(int argc, char **argv) {
     int listenfd, connfd;
-    struct sockaddr_in clientaddr;
-    socklen_t clientlen = (socklen_t) sizeof(clientaddr);
 
     if (argc != 1) {
         fprintf(stderr, "Usage: %s\n", argv[0]);
@@ -99,7 +97,7 @@ int main(int argc, char **argv) {
         Signal(SIGCHLD, SIG_DFL);
         Signal(SIGINT, SIG_DFL);
         while (1) {
-            while ((connfd = Accept(listenfd, (SA *) &clientaddr, &clientlen)) == -1);
+            while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
 
             server_body(connfd);
 
