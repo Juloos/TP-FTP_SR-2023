@@ -44,7 +44,7 @@ int interprete_reponse(int clientfd, Reponse *rep) {
             printf("Serveur: erreur de mémoire, faut augmenter la RAM mon biquet\n");
             break;
         case REP_ERREUR:
-            printf("Serveur: erreur\n");
+            printf("Serveur: erreur inconnue au bataillon\n");
             break;
         case REP_ERREUR_CURSEUR:
             printf("Serveur: erreur de curseur (reprise du transfère)\n");
