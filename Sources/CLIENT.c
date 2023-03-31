@@ -16,12 +16,14 @@ void envoyer_requete(int clientfd, Requete *req, char *arg) {
         Rio_writen(clientfd, arg, req->arg_len);
 }
 
+#define INTERPRETE_REPONSE_OK 0
+#define INTERPRETE_REPONSE_PAS_OK (-1)
 int interprete_reponse(int clientfd, Reponse *rep) {
     Rio_readn(clientfd, rep, sizeof(Reponse));
     Reponse_ntoh(rep);
     switch (rep->code) {
         case REP_OK:
-            return 0;
+            return INTERPRETE_REPONSE_OK;
         case REP_ERREUR_FICHIER:
             printf("Serveur: le fichier n'existe pas\n");
             break;
@@ -32,7 +34,7 @@ int interprete_reponse(int clientfd, Reponse *rep) {
             printf("Serveur: erreur\n");
             break;
     }
-    return -1;
+    return INTERPRETE_REPONSE_PAS_OK;
 }
 
 void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, time_t req_timestamp) {
@@ -64,23 +66,26 @@ size_t prompt(char *buf) {
     return len;
 }
 
+#define LIRE_COMMANDE_ERR (-1)
 int lire_commande(char *buf, Requete *req) {
     size_t len = prompt(buf);
 
     init_Requete(req);
     int argi = (int) len;
 
-    if (strncmp(buf, "get ", 4) == 0) {
-        req->code = OP_GET;
-        if (len < 5) {
+    if (strncmp(buf, "get", 3) == 0) {
+        if (len < 5 || buf[3] != ' ') {
             fprintf(stderr, "Il manque un argument\n");
-            return -1;
+            return LIRE_COMMANDE_ERR;
         }
+        req->code = OP_GET;
         req->arg_len = len - 3;
         argi = 4;
-    } else if (strncmp(buf, "bye ", 4) != 0) {
+    } else if (strcmp(buf, "bye") != 0) {
         fprintf(stderr, "Commande non implémentée\n");
-        return -1;
+        return LIRE_COMMANDE_ERR;
+    } else {
+        req->code = OP_BYE;
     }
     return argi;
 }
@@ -108,7 +113,7 @@ int main(int argc, char **argv) {
     clientfd = Open_clientfd(host, PORT);
 
     // à placer dans une boucle par la suite
-        if ((argi = lire_commande(buf, &req)) == -1) {
+        if ((argi = lire_commande(buf, &req)) == LIRE_COMMANDE_ERR) {
             Close(clientfd);
             exit(EXIT_FAILURE);
         }
@@ -117,9 +122,9 @@ int main(int argc, char **argv) {
         time_t start = time(NULL);
         envoyer_requete(clientfd, &req, arg);
 
-        if (interprete_reponse(clientfd, &rep) == -1) {
+        if (interprete_reponse(clientfd, &rep) == INTERPRETE_REPONSE_PAS_OK) {
             Close(clientfd);
-            exit(EXIT_FAILURE);
+            exit(EXIT_SUCCESS);
         }
         execute_requete(clientfd, &req, &rep, arg, start);
 

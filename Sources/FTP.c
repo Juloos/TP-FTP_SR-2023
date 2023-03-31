@@ -45,37 +45,44 @@ void server_body(int connfd) {
     if (req.arg_len) arg = (char *) Malloc(req.arg_len);
     Rio_readn(connfd, arg, req.arg_len);
 
-    if (req.code == OP_GET) {
-        printf("Requete: GET %s\n", arg);
+    switch (req.code) {
+        case (OP_GET):
+            printf("Requete: GET %s\n", arg);
 
-        strcat(filename, arg);
-        if ((f = open(filename, O_RDONLY)) == -1) {
-            rep.code = REP_ERREUR_FICHIER;
+            strcat(filename, arg);
+            if ((f = open(filename, O_RDONLY)) == -1) {
+                rep.code = REP_ERREUR_FICHIER;
+                Reponse_hton(&rep);
+                Rio_writen(connfd, &rep, sizeof(Reponse));
+                return;
+            }
+            filename[strlen(filename) - strlen(arg)] = '\0';
+
+            struct stat st;
+            fstat(f, &st);
+
+            char *buf;
+            if ((buf = (char *) malloc(st.st_size)) == NULL) {
+                rep.code = REP_ERREUR_MEMOIRE;
+                Reponse_hton(&rep);
+                Rio_writen(connfd, &rep, sizeof(Reponse));
+                return;
+            }
+            read(f, buf, st.st_size);
+            close(f);
+
+            rep.res_len = st.st_size;
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
-            return;
-        }
-        filename[strlen(filename) - strlen(arg)] = '\0';
-
-        struct stat st;
-        fstat(f, &st);
-
-        char *buf;
-        if ((buf = (char *) malloc(st.st_size)) == NULL) {
-            rep.code = REP_ERREUR_MEMOIRE;
+            if (st.st_size > 0)
+                Rio_writen(connfd, buf, st.st_size);
+            free(buf);
+            break;
+        case (OP_BYE):
+            printf("Requete: BYE\n");
             Reponse_hton(&rep);
             Rio_writen(connfd, &rep, sizeof(Reponse));
-            return;
-        }
-        read(f, buf, st.st_size);
-        close(f);
-
-        rep.res_len = st.st_size;
-        Reponse_hton(&rep);
-        Rio_writen(connfd, &rep, sizeof(Reponse));
-        if (st.st_size > 0)
-            Rio_writen(connfd, buf, st.st_size);
-        free(buf);
+            break;
     }
 }
 
