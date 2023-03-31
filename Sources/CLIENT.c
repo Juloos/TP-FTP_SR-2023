@@ -24,10 +24,8 @@ void envoyer_requete(int clientfd, Requete *req, char *arg) {
 }
 
 int interprete_reponse(int clientfd, Reponse *rep) {
-    if (rio_readn(clientfd, rep, sizeof(Reponse)) < 0) {
-#ifdef DEBUG
+    if (rio_readn(clientfd, rep, sizeof(Reponse)) == 0) {
         fprintf(stderr, "Serveur: erreur de lecture\n");
-#endif
         return -1;
     }
     Reponse_ntoh(rep);

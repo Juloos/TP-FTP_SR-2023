@@ -41,7 +41,12 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
 #ifdef DEBUG
         fprintf(stderr, "Réception d'un paquet (taille = %d)\n", TAILLE_BLOCK);
 #endif
-        rio_readn(clientfd, res, TAILLE_BLOCK);
+        if (rio_readn(clientfd, res, TAILLE_BLOCK) == 0) {
+            fprintf(stderr, "Erreur lors de la réception du fichier\n");
+            Close(clientfd);
+            Close(f);
+            exit(EXIT_FAILURE);
+        }
         Write(f, res, TAILLE_BLOCK);
         taille -= TAILLE_BLOCK;
     }
@@ -49,7 +54,12 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
 #ifdef DEBUG
     fprintf(stderr, "Réception du dernier paquet (taille = %d)\n", taille);
 #endif
-    rio_readn(clientfd, res, taille);
+    if (rio_readn(clientfd, res, taille) == 0) {
+        fprintf(stderr, "Erreur lors de la réception du fichier\n");
+        Close(clientfd);
+        Close(f);
+        exit(EXIT_FAILURE);
+    }
     Write(f, res, taille);
 }
 
