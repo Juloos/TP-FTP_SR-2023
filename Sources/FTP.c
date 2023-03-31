@@ -4,7 +4,6 @@
 
 #define PORT 4242
 #define NB_PROC 5
-#define MAX_NAME_LEN 256
 
 int volatile sigpipe = 0;
 
@@ -17,9 +16,9 @@ void handler_SIGCHLD(int sig) {
 void handler_SIGINT(int sig) {
     Signal(SIGCHLD, SIG_DFL);
     for (int i = 0; i < NB_PROC; i++)
-        Kill(ptab[i], SIGKILL);
+        kill(ptab[i], SIGKILL);
     for (int i = 0; i < NB_PROC; i++)
-        Wait(NULL);
+        wait(NULL);
     exit(EXIT_SUCCESS);
 }
 
@@ -28,13 +27,18 @@ void handler_SIGPIPE(int sig) {
     sigpipe = 1;
 }
 
+#define CREERNFILS_PARENT 1
+#define CREERNFILS_CHILD 0
 int creerNfils(int nbFils) {
     for (int i = 0; i < nbFils; i++)
         if ((ptab[i] = Fork()) == 0)
-            return 0;
-    return 1;
+            return CREERNFILS_CHILD;
+    return CREERNFILS_PARENT;
 }
 
+#define SERVER_BODY_BYE 2
+#define SERVER_BODY_ERR 1
+#define SERVER_BODY_OK 0
 int server_body(int connfd) {
     Requete req;
     char *arg;
@@ -53,62 +57,79 @@ int server_body(int connfd) {
     if (rio_readn(connfd, &req, sizeof(Requete)) == 0) {
         printf("Un client s'est déconnecté\n");
         Close(connfd);
-        return 2;
+        return SERVER_BODY_BYE;
     }
     Requete_ntoh(&req);
 
     // Lecture du nom du fichier
-    if (req.arg_len) arg = (char *) Malloc(req.arg_len);
-    Rio_readn(connfd, arg, req.arg_len);
-
-    if (req.code == OP_GET) {
-#ifdef DEBUG
-        fprintf(stderr, "Requete: GET %s\n", arg);
-#endif
-
-        strcat(filename, arg);
-
-        if ((f = open(filename, O_RDONLY)) == -1) {
-            rep.code = REP_ERREUR_FICHIER;
-            Reponse_hton(&rep);
-            Rio_writen(connfd, &rep, sizeof(Reponse));
-            return 1;
+    if (req.arg_len) {
+        arg = (char *) Malloc(req.arg_len);
+        if (rio_readn(connfd, arg, req.arg_len) == 0) {
+            printf("Un client s'est déconnecté\n");
+            Close(connfd);
+            return SERVER_BODY_BYE;
         }
-        filename[strlen(filename) - strlen(arg)] = '\0';
+    }
 
-        struct stat st;
-        fstat(f, &st);
+    switch (req.code) {
+        case OP_GET:
+#ifdef DEBUG
+            fprintf(stderr, "Requete: GET %s\n", arg);
+#endif
+            strcat(filename, arg);
 
-        // Envoie du fichier en plusieurs paquets
-        unsigned int taille = st.st_size;
+            if ((f = open(filename, O_RDONLY)) == -1) {
+                rep.code = REP_ERREUR_FICHIER;
+                Reponse_hton(&rep);
+                rio_writen(connfd, &rep, sizeof(Reponse));
+                return SERVER_BODY_ERR;
+            }
+            filename[strlen(filename) - strlen(arg)] = '\0';
 
-        if (req.cursor > st.st_size) {
-            fprintf(stderr, "Erreur: curseur > taille du fichier\n");
-            rep.code = REP_ERREUR_CURSEUR;
+            struct stat st;
+            fstat(f, &st);
+
+            // Envoie du fichier en plusieurs paquets
+            unsigned int taille = st.st_size;
+
+            if (req.cursor > st.st_size) {
+                fprintf(stderr, "Erreur: curseur > taille du fichier\n");
+                rep.code = REP_ERREUR_CURSEUR;
+                Reponse_hton(&rep);
+                rio_writen(connfd, &rep, sizeof(Reponse));
+                return 1;
+            } else if (req.cursor > 0) {
+                fprintf(stderr, "Curseur = %d\n", req.cursor);
+                Lseek(f, req.cursor, SEEK_SET);
+                taille -= req.cursor;
+            }
+            rep.res_len = taille;
+
+            envoie_fichier(rep, connfd, f, taille);
+
+            Close(f);
+            break;
+
+        case OP_BYE:
+#ifdef DEBUG
+            fprintf(stderr, "Requete: BYE\n");
+#endif
+            rep.code = REP_OK;
             Reponse_hton(&rep);
             rio_writen(connfd, &rep, sizeof(Reponse));
-            return 1;
-        } else if (req.cursor > 0) {
-            fprintf(stderr, "Curseur = %d\n", req.cursor);
-            Lseek(f, req.cursor, SEEK_SET);
-            taille -= req.cursor;
-        }
-        rep.res_len = taille;
-
-        envoie_fichier(rep, connfd, f, taille);
-
-        Close(f);
+            Close(connfd);
+            return SERVER_BODY_BYE;
     }
-    return 0;
+    return SERVER_BODY_OK;
 }
 
 int main(int argc, char **argv) {
     int listenfd, connfd;
-    struct sockaddr_in clientaddr;
-    char client_ip_string[INET_ADDRSTRLEN];
-    char client_hostname[MAX_NAME_LEN];
 
-    socklen_t clientlen = (socklen_t) sizeof(clientaddr);
+#ifdef DEBUG
+    int n = 1;
+    fprintf(stderr, "Endianess: %s\n", *(char *) &n == 1 ? "Little Endian" : "Big Endian");
+#endif
 
     if (argc != 1) {
         fprintf(stderr, "Usage: %s\n", argv[0]);
@@ -120,26 +141,18 @@ int main(int argc, char **argv) {
 
     listenfd = Open_listenfd(PORT);
 
-    if (creerNfils(NB_PROC) == 0) {
+    if (creerNfils(NB_PROC) == CREERNFILS_CHILD) {
         // Child
         Signal(SIGCHLD, SIG_DFL);
         Signal(SIGINT, SIG_DFL);
         Signal(SIGPIPE, handler_SIGPIPE);
         while (1) {
             sigpipe = 0;
-            while ((connfd = Accept(listenfd, (SA *) &clientaddr, &clientlen)) == -1);
-
-            /* determine the name of the client */
-            Getnameinfo((SA *) &clientaddr, clientlen, client_hostname, MAX_NAME_LEN, 0, 0, 0);
-
-            /* determine the textual representation of the client's IP address */
-            Inet_ntop(AF_INET, &clientaddr.sin_addr, client_ip_string, INET_ADDRSTRLEN);
-
-            printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
+            while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
 
             while (1) {
                 /* Si le client ferme la connexion par un bye ou une erreur */
-                if (server_body(connfd) == 2 || sigpipe) break;
+                if (server_body(connfd) == SERVER_BODY_BYE || sigpipe) break;
             }
         }
     }
