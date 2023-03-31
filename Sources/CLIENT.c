@@ -23,20 +23,23 @@ void envoyer_requete(int clientfd, Requete *req, char *arg) {
         rio_writen(clientfd, arg, req->arg_len);
 }
 
+#define INTERPRETE_REPONSE_OK 0
+#define INTERPRETE_REPONSE_PAS_OK (-1)
+#define INTERPRETE_REPONSE_ERR (-2)
 int interprete_reponse(int clientfd, Reponse *rep) {
     if (rio_readn(clientfd, rep, sizeof(Reponse)) == 0) {
         fprintf(stderr, "Serveur: erreur de lecture\n");
-        return -1;
+        return INTERPRETE_REPONSE_ERR;
     }
     Reponse_ntoh(rep);
     switch (rep->code) {
         case REP_OK:
-            return 0;
+            return INTERPRETE_REPONSE_OK;
         case REP_ERREUR_FICHIER:
             printf("Serveur: le fichier n'existe pas\n");
             break;
         case REP_ERREUR_MEMOIRE:
-            printf("Serveur: erreur de mémoire\n");
+            printf("Serveur: erreur de mémoire, faut augmenter la RAM mon biquet\n");
             break;
         case REP_ERREUR:
             printf("Serveur: erreur\n");
@@ -45,7 +48,7 @@ int interprete_reponse(int clientfd, Reponse *rep) {
             printf("Serveur: erreur de curseur (reprise du transfère)\n");
             break;
     }
-    return -2;
+    return INTERPRETE_REPONSE_PAS_OK;
 }
 
 void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, struct timeval start) {
@@ -108,17 +111,18 @@ size_t prompt(char *buf, int couleur) {
     return len;
 }
 
+#define LIRE_COMMANDE_ERR (-1)
 int lire_commande(char *buf, Requete *req, int couleur) {
     size_t len = prompt(buf, couleur);
 
     int argi = (int) len;
 
-    if (strncmp(buf, "get ", 4) == 0) {
-        req->code = OP_GET;
-        if (len < 5) {
+    if (strncmp(buf, "get", 3) == 0) {
+        if (len < 5 || buf[3] != ' ') {
             fprintf(stderr, "Il manque un argument\n");
-            return -1;
+            return LIRE_COMMANDE_ERR;
         }
+        req->code = OP_GET;
         req->arg_len = len - 3;
         argi = 4;
 
@@ -135,16 +139,11 @@ int lire_commande(char *buf, Requete *req, int couleur) {
         }
         pathname[strlen(pathname) - strlen(buf + argi) - 1] = '\0';
 
-    } else if (strncmp(buf, "bye", 3) == 0 && len == 3) {
+    } else if (strcmp(buf, "bye") == 0) {
         req->code = OP_BYE;
-        fprintf(stderr, "Commande bye reçue\n");
-        return -2;
-    } else if (strncmp(buf, "get", 3) == 0 && len == 3) {
-        fprintf(stderr, "Il manque un argument\n");
-        return -1;
     } else {
         fprintf(stderr, "Commande inconnue\n");
-        return -1;
+        return LIRE_COMMANDE_ERR;
     }
     return argi;
 }
@@ -162,6 +161,11 @@ int main(int argc, char **argv) {
     char *arg;
     int argi;
     struct timeval start;
+
+#ifdef DEBUG
+    int n = 1;
+    fprintf(stderr, "Endianess: %s\n", *(char *) &n == 1 ? "Little Endian" : "Big Endian");
+#endif
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <host>\n", argv[0]);
@@ -197,9 +201,12 @@ int main(int argc, char **argv) {
         envoyer_requete(clientfd, &req, arg);
 
         /* Erreur avec rio_readn */
-        if (interprete_reponse(clientfd, &rep) == -1) {
-            Close(clientfd);
-            exit(EXIT_FAILURE);
+        switch (interprete_reponse(clientfd, &rep)) {
+            case INTERPRETE_REPONSE_ERR:
+                Close(clientfd);
+                exit(EXIT_FAILURE);
+            case INTERPRETE_REPONSE_PAS_OK:
+                continue;
         }
         execute_requete(clientfd, &req, &rep, arg, start);
     }
