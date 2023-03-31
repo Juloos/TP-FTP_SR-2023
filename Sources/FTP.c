@@ -8,7 +8,7 @@
 pid_t ptab[NB_PROC];
 
 void handler_SIGCHLD(int sig) {
-    while (Waitpid(-1, NULL, WNOHANG) > 0);
+    while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
 void handler_SIGINT(int sig) {
@@ -28,7 +28,6 @@ int creerNfils(int nbFils) {
 }
 
 void server_body(int connfd) {
-    rio_t rio;
     Requete req;
     char *arg;
     Reponse rep = {REP_OK, 0};
@@ -41,12 +40,10 @@ void server_body(int connfd) {
     }
     strcat(filename, "/.server/");
 
-    Rio_readinitb(&rio, connfd);
-
-    Rio_readnb(&rio, &req, sizeof(Requete));
+    Rio_readn(connfd, &req, sizeof(Requete));
     Requete_ntoh(&req);
     if (req.arg_len) arg = (char *) Malloc(req.arg_len);
-    Rio_readnb(&rio, arg, req.arg_len);
+    Rio_readn(connfd, arg, req.arg_len);
 
     if (req.code == OP_GET) {
         printf("Requete: GET %s\n", arg);

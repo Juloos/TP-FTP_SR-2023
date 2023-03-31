@@ -26,7 +26,7 @@ int interprete_reponse(int clientfd, Reponse *rep) {
             printf("Serveur: le fichier n'existe pas\n");
             break;
         case REP_ERREUR_MEMOIRE:
-            printf("Serveur: erreur de mémoire\n");
+            printf("Serveur: erreur de mémoire, faut augmenter la RAM mon biquet\n");
             break;
         case REP_ERREUR:
             printf("Serveur: erreur\n");
@@ -85,11 +85,6 @@ int lire_commande(char *buf, Requete *req) {
     return argi;
 }
 
-void handler_SIGPIPE(int sig) {
-    printf("Le serveur a fermé la connexion\n");
-    exit(EXIT_SUCCESS);
-}
-
 int main(int argc, char **argv) {
     int clientfd;
     char *host, buf[MAXLINE];
@@ -110,7 +105,6 @@ int main(int argc, char **argv) {
     }                                                                           //   |  the client program
     strcat(pathname, "/.client/");                                              //  -|
 
-    Signal(SIGPIPE, handler_SIGPIPE);
     clientfd = Open_clientfd(host, PORT);
 
     // à placer dans une boucle par la suite
