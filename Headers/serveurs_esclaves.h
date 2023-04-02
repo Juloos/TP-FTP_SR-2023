@@ -24,6 +24,14 @@
 #define SERVER_BODY_OK 0
 
 /**
+ * @brief Valeur de retour lors de la création du pool de processus
+ * @def CREERNFILS_PARENT 1
+ * @def CREERNFILS_CHILD 0
+ */
+#define CREERNFILS_PARENT 1
+#define CREERNFILS_CHILD 0
+
+/**
  * @brief Variable contenant l'adresse IP du serveur maître
  */
 extern char *master_ip;

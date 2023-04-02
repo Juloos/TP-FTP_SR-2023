@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MAX_NAME_LEN 256
+
 int volatile sigpipe0 = 0;
 
 char *master_ip = "127.0.0.1";
@@ -35,15 +37,12 @@ int main(int argc, char **argv) {
     Serveur serv;
     serv.port = port;
 
-    struct sockaddr_in clientaddr;
-    char client_ip_string[INET_ADDRSTRLEN];
+    struct sockaddr_in addr;
+    socklen_t len = sizeof(addr);
+    getsockname(clientfd, (struct sockaddr *) &addr, &len);
+    printf("Adresse IP de l'esclave : %s\n", inet_ntoa(addr.sin_addr));
 
-    /* determine the textual representation of the client's IP address */
-    Inet_ntop(AF_INET, &clientaddr.sin_addr, client_ip_string, INET_ADDRSTRLEN);
-
-    //printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
-
-    strcpy(serv.ip, client_ip_string);
+    strcpy(serv.ip, inet_ntoa(addr.sin_addr));
 
     /* Envoie ses données au serveur maître */
     rio_writen(clientfd, &serv, sizeof(serv));

@@ -3,15 +3,11 @@
 
 int volatile sigpipe = 0;
 
-/* Même machine pour l'instant */
-char *ip_servers[MAX_SERVERS] = {"127.0.0.1", "127.0.0.1", "127.0.0.1"};
-
 /* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
 void handler_SIGINT(int sig) {
     printf("Serveur: fermeture du serveur maître\n");
     exit(EXIT_SUCCESS);
     /* Tuer les serveurs esclaves */
-
 }
 
 void handler_SIGPIPE(int sig) {
@@ -50,7 +46,7 @@ int main(int argc, char **argv) {
             continue;
         }
         serveurs[nb_servers].port = server.port;
-        strcpy(serveurs[nb_servers].ip, ip_servers[nb_servers]);
+        strcpy(serveurs[nb_servers].ip, server.ip);
 #ifdef DEBUG
         fprintf(stderr, "Serveur : port de l'esclave %d = %d\n", nb_servers, serveurs[nb_servers].port);
         fprintf(stderr, "Serveur : serveur esclave %d connecté\n", numero);

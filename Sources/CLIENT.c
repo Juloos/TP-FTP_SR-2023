@@ -25,6 +25,7 @@ void envoyer_requete(int clientfd, Requete *req, char *arg) {
 #define INTERPRETE_REPONSE_OK 0
 #define INTERPRETE_REPONSE_PAS_OK (-1)
 #define INTERPRETE_REPONSE_ERR (-2)
+
 int interprete_reponse(int clientfd, Reponse *rep) {
     if (rio_readn(clientfd, rep, sizeof(Reponse)) == 0) {
         fprintf(stderr, "Serveur: erreur de lecture\n");
@@ -111,13 +112,14 @@ size_t prompt(char *buf, int couleur) {
 }
 
 #define LIRE_COMMANDE_ERR (-1)
+
 int lire_commande(char *buf, Requete *req, int couleur) {
     size_t len = prompt(buf, couleur);
 
     int argi = (int) len;
 
     if (strncmp(buf, "get", 3) == 0) {
-        if (len < 5 || buf[3] != ' ') {
+        if ((buf[3] == ' ' && len == 4) || len == 3) {
             fprintf(stderr, "Il manque un argument\n");
             return LIRE_COMMANDE_ERR;
         }
