@@ -2,6 +2,7 @@
 #define TP_FTP_SR_2023_PROTOCOLES_H
 
 #include <stdint.h>
+#include "csapp.h"
 
 // TODO : expliquer notre protocole dans le CR (schéma)
 
@@ -27,7 +28,6 @@ typedef struct {
     uint32_t res_len;
 } Reponse;
 
-
 // Remplie la structure avec des valeurs par défaut
 void init_Requete(Requete *req);
 
@@ -44,5 +44,12 @@ void Reponse_ntoh(Reponse *rep);
 void reception_fichier(int clientfd, int f, unsigned int taille);
 
 void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille);
+
+#define MAX_SERVERS 3
+
+typedef struct {
+    int port;
+    char ip[MAXLINE];
+} Serveur;
 
 #endif //TP_FTP_SR_2023_PROTOCOLES_H

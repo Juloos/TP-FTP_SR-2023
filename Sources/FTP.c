@@ -1,25 +1,44 @@
-#include <sys/stat.h>
 #include "../Headers/csapp.h"
-#include "../Headers/protocoles.h"
-
-#define PORT 4242
-#define NB_PROC 5
+#include "../Headers/serveurs_esclaves.h"
 
 int volatile sigpipe = 0;
 
-pid_t ptab[NB_PROC];
+/* Même machine pour l'instant */
+char *ip_servers[MAX_SERVERS] = {"127.0.0.1", "127.0.0.1", "127.0.0.1"};
 
-void handler_SIGCHLD(int sig) {
-    while (waitpid(-1, NULL, WNOHANG) > 0);
+int numero_port(int numero_esclave) {
+    switch(numero_esclave) {
+        case 0:
+            return PORT1;
+        case 1:
+            return PORT2;
+        case 2:
+            return PORT3;
+        default:
+            return -1;
+    }
 }
 
+char *hostname(int numero_esclave) {
+    switch(numero_esclave) {
+        case 0:
+            return ip_servers[0];
+        case 1:
+            return ip_servers[1];
+        case 2:
+            return ip_servers[2];
+        default:
+            return NULL;
+    }
+}
+
+
+/* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
 void handler_SIGINT(int sig) {
-    Signal(SIGCHLD, SIG_DFL);
-    for (int i = 0; i < NB_PROC; i++)
-        kill(ptab[i], SIGKILL);
-    for (int i = 0; i < NB_PROC; i++)
-        wait(NULL);
+    printf("Serveur: fermeture du serveur maître\n");
     exit(EXIT_SUCCESS);
+    /* Tuer les serveurs esclaves */
+
 }
 
 void handler_SIGPIPE(int sig) {
@@ -27,104 +46,13 @@ void handler_SIGPIPE(int sig) {
     sigpipe = 1;
 }
 
-#define CREERNFILS_PARENT 1
-#define CREERNFILS_CHILD 0
-int creerNfils(int nbFils) {
-    for (int i = 0; i < nbFils; i++)
-        if ((ptab[i] = Fork()) == 0)
-            return CREERNFILS_CHILD;
-    return CREERNFILS_PARENT;
-}
-
-#define SERVER_BODY_BYE 2
-#define SERVER_BODY_ERR 1
-#define SERVER_BODY_OK 0
-int server_body(int connfd) {
-    Requete req;
-    char *arg;
-    Reponse rep;
-    int f;
-    char filename[MAXLINE];
-
-    init_Reponse(&rep);
-
-    if (getcwd(filename, sizeof(filename)) == NULL) {
-        fprintf(stderr, "Erreur lors de l'obtention du répertoire courant\n");
-        exit(EXIT_FAILURE);
-    }
-    strcat(filename, "/.server/");
-
-    if (rio_readn(connfd, &req, sizeof(Requete)) == 0) {
-        printf("Un client s'est déconnecté\n");
-        Close(connfd);
-        return SERVER_BODY_BYE;
-    }
-    Requete_ntoh(&req);
-
-    // Lecture du nom du fichier
-    if (req.arg_len) {
-        arg = (char *) Malloc(req.arg_len);
-        if (rio_readn(connfd, arg, req.arg_len) == 0) {
-            printf("Un client s'est déconnecté\n");
-            Close(connfd);
-            return SERVER_BODY_BYE;
-        }
-    }
-
-    switch (req.code) {
-        case OP_GET:
-#ifdef DEBUG
-            fprintf(stderr, "Requete: GET %s\n", arg);
-#endif
-            strcat(filename, arg);
-
-            if ((f = open(filename, O_RDONLY)) == -1) {
-                rep.code = REP_ERREUR_FICHIER;
-                Reponse_hton(&rep);
-                rio_writen(connfd, &rep, sizeof(Reponse));
-                return SERVER_BODY_ERR;
-            }
-            filename[strlen(filename) - strlen(arg)] = '\0';
-
-            struct stat st;
-            fstat(f, &st);
-
-            // Envoie du fichier en plusieurs paquets
-            unsigned int taille = st.st_size;
-
-            if (req.cursor > st.st_size) {
-                fprintf(stderr, "Erreur: curseur > taille du fichier\n");
-                rep.code = REP_ERREUR_CURSEUR;
-                Reponse_hton(&rep);
-                rio_writen(connfd, &rep, sizeof(Reponse));
-                return 1;
-            } else if (req.cursor > 0) {
-                fprintf(stderr, "Curseur = %d\n", req.cursor);
-                Lseek(f, req.cursor, SEEK_SET);
-                taille -= req.cursor;
-            }
-            rep.res_len = taille;
-
-            envoie_fichier(rep, connfd, f, taille);
-
-            Close(f);
-            break;
-
-        case OP_BYE:
-#ifdef DEBUG
-            fprintf(stderr, "Requete: BYE\n");
-#endif
-            rep.code = REP_OK;
-            Reponse_hton(&rep);
-            rio_writen(connfd, &rep, sizeof(Reponse));
-            Close(connfd);
-            return SERVER_BODY_BYE;
-    }
-    return SERVER_BODY_OK;
-}
-
 int main(int argc, char **argv) {
+    Signal(SIGPIPE, handler_SIGPIPE);
     int listenfd, connfd;
+    int nb_servers = 0;
+    int server_courant = 0;
+
+    Serveur serveurs[MAX_SERVERS];
 
 #ifdef DEBUG
     int n = 1;
@@ -136,28 +64,49 @@ int main(int argc, char **argv) {
         exit(EXIT_SUCCESS);
     }
 
-    Signal(SIGCHLD, handler_SIGCHLD);
     Signal(SIGINT, handler_SIGINT);
+
+    /* Affichage de l'ip */
+    char hostName[256];
+    gethostname(hostName, sizeof(hostName));
+    struct hostent *host1 = gethostbyname(hostName);
+    printf("Serveur : ip = %s\n", inet_ntoa(*(struct in_addr *) host1->h_addr_list[0]));
 
     listenfd = Open_listenfd(PORT);
 
-    if (creerNfils(NB_PROC) == CREERNFILS_CHILD) {
-        // Child
-        Signal(SIGCHLD, SIG_DFL);
-        Signal(SIGINT, SIG_DFL);
-        Signal(SIGPIPE, handler_SIGPIPE);
-        while (1) {
-            sigpipe = 0;
-            while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
-
-            while (1) {
-                /* Si le client ferme la connexion par un bye ou une erreur */
-                if (server_body(connfd) == SERVER_BODY_BYE || sigpipe) break;
-            }
-        }
+    for(int i=0; i<MAX_SERVERS; i++) {
+        fprintf(stderr, "port de l'esclave %d = %d\n", i+1, numero_port(i));
     }
-    // Parent
+
+    /* Attend la connexion des serveurs esclaves */
+    while (nb_servers < MAX_SERVERS) {
+        while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
+        uint8_t numero;
+        if (rio_readn(connfd, &numero, sizeof(numero)) == 0) {
+            fprintf(stderr, "Serveur : Un serveur esclave s'est déconnecté avant identification\n");
+            continue;
+        }
+        serveurs[numero].port = numero_port(numero);
+        fprintf(stderr, "Serveur : port de l'esclave %d = %d\n", numero, serveurs[numero].port);
+        strcpy(serveurs[numero].ip, hostname(numero));
+        printf("Serveur : serveur esclave %d connecté\n", numero);
+        Close(connfd);
+        nb_servers++;
+    }
+
+    /* Attend la connexion d'un client */
     while (1) {
-        Pause();
+        sigpipe = 0;
+        while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
+
+        while (1) {
+            /* Envoie la structure serveur correspondant pour que le client se connecte à l'esclave */
+            rio_writen(connfd, &serveurs[server_courant], sizeof(Serveur));
+
+            /* Ferme la connexion */
+            Close(connfd);
+
+            server_courant = (server_courant + 1) % MAX_SERVERS;
+        }
     }
 }

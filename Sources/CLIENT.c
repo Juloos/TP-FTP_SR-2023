@@ -1,5 +1,6 @@
 #include "../Headers/csapp.h"
 #include "../Headers/protocoles.h"
+#include "serveurs_esclaves.h"
 #include <string.h>
 #include <time.h>
 
@@ -181,7 +182,22 @@ int main(int argc, char **argv) {
     strcat(pathname, "/.client/");
 
     Signal(SIGPIPE, handler_SIGPIPE);
+    /* Connexion au serveur maître pour récupérer le numero de l'esclave */
     clientfd = Open_clientfd(host, PORT);
+
+    /* Lecture de l'ip et le port du serveur esclave */
+    Serveur serv;
+    if (rio_readn(clientfd, &serv, sizeof(Serveur)) == 0) {
+        fprintf(stderr, "Le serveur maître a fermé la connexion\n");
+        exit(EXIT_FAILURE);
+    }
+    Close(clientfd);
+
+    /* Connexion à l'esclave */
+    fprintf(stderr, "Connexion à l'esclave %s:%d\n", serv.ip, serv.port);
+    clientfd = Open_clientfd(serv.ip, serv.port);
+
+    /* Code de base de l'etape 2 */
     int couleur = 31;
 
     while (1) {
