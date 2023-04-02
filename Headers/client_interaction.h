@@ -11,15 +11,9 @@
  */
 void envoyer_requete(int clientfd, Requete *req, char *arg);
 
-/**
- * @brief Macros pour les codes de retour de la fonction interprete_reponse
- * @def INTERPRETE_REPONSE_OK 0
- * @def INTERPRETE_REPONSE_PAS_OK -1
- * @def INTERPRETE_REPONSE_ERR -2
- */
-#define INTERPRETE_REPONSE_OK 0
-#define INTERPRETE_REPONSE_PAS_OK (-1)
-#define INTERPRETE_REPONSE_ERR (-2)
+#define INTERPRETE_REPONSE_OK 0         ///< La réponse est ok
+#define INTERPRETE_REPONSE_PAS_OK (-1)  ///< La réponse est pas ok
+#define INTERPRETE_REPONSE_ERR (-2)     ///< Erreur de communication
 
 /**
  * @brief Interprète la réponse du serveur

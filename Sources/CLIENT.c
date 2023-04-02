@@ -3,11 +3,7 @@
 #include "../Headers/client_interaction.h"
 #include <string.h>
 
-/**
- * @def PORT 4242
- * @brief Port du serveur maître
- */
-#define PORT 4242
+#define PORT 4242 ///< Port du serveur maître
 
 /**
  * @brief Chemin du dossier du client
@@ -45,11 +41,7 @@ size_t prompt(char *buf) {
     return len;
 }
 
-/**
- * @brief Macro qui permet de vérifier si la commande est valide
- * @def LIRE_COMMANDE_ERR (-1)
- */
-#define LIRE_COMMANDE_ERR (-1)
+#define LIRE_COMMANDE_ERR (-1) ///< Macro qui permet de vérifier si la commande est valide
 
 /**
  * @brief Fonction qui lit la commande entrée par l'utilisateur

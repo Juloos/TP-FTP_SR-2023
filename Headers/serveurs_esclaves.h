@@ -7,36 +7,17 @@
 #include "csapp.h"
 #include "protocoles.h"
 
-/**
- * @def PORT 4242
- * @brief Port du serveur maître
- */
-#define PORT 4242
+#define PORT 4242 ///< Port du serveur maître
 
-/**
- * @brief Valeurs de retour de la fonction server_body
- * @def SERVER_BODY_OK 0
- * @def SERVER_BODY_ERR 1
- * @def SERVER_BODY_BYE 2
- */
-#define SERVER_BODY_OK 0
-#define SERVER_BODY_ERR 1
-#define SERVER_BODY_BYE 2
+#define SERVER_BODY_OK 0    ///< Code de retour OK
+#define SERVER_BODY_ERR 1   ///< Code de retour erreur
+#define SERVER_BODY_BYE 2   ///< Code de retour bye
 
-/**
- * @brief Valeur de retour lors de la création du pool de processus
- * @def CREERNFILS_PARENT 1
- * @def CREERNFILS_CHILD 0
- */
-#define CREERNFILS_PARENT 1
-#define CREERNFILS_CHILD 0
+#define CREERNFILS_PARENT 1   ///< Code de retour du père
+#define CREERNFILS_CHILD 0    ///< Code de retour du fils
 
-/**
- * @brief Nombre de processus fils
- * @def NB_PROC 5
- */
 #ifndef NB_PROC
-#define NB_PROC 5
+#define NB_PROC 5    ///< Nombre de processus fils
 #endif
 
 /**

@@ -6,47 +6,17 @@
 
 // TODO : expliquer notre protocole dans le CR (schéma)
 
-/**
- * @brief Codes des requêtes
- * @details Les codes des requêtes sont définis par les macros suivantes :
- * @var OP_GET Récupération d'un fichier
- * @var OP_BYE Fermeture de la connexion
- * @var OP_INT Interruption du serveur esclave (envoyé par le serveur maître)
- * @def OP_GET 1
- * @def OP_BYE 2
- * @def OP_INT 3
- */
-#define OP_GET 1
-#define OP_BYE 2
-#define OP_INT 3
+#define OP_GET 1 ///< Code pour la requête GET
+#define OP_BYE 2 ///< Code pour la requête BYE
+#define OP_INT 3 ///< Code pour l'interruption du serveur maître (etape 3)
 
-/**
- * @brief Codes des réponses
- * @details Les codes des réponses sont définis par les macros suivantes :
- * @var REP_OK Réponse OK
- * @var REP_ERREUR Réponse d'erreur
- * @var REP_ERREUR_FICHIER Réponse d'erreur : fichier non trouvé
- * @var REP_ERREUR_MEMOIRE Réponse d'erreur : mémoire insuffisante
- * @var REP_ERREUR_CURSEUR Réponse d'erreur : curseur invalide
- * @def REP_OK 1
- * @def REP_ERREUR 2
- * @def REP_ERREUR_FICHIER 3
- * @def REP_ERREUR_MEMOIRE 4
- * @def REP_ERREUR_CURSEUR 5
- */
-#define REP_OK 1
-#define REP_ERREUR 2
-#define REP_ERREUR_FICHIER 3
-#define REP_ERREUR_MEMOIRE 4
-#define REP_ERREUR_CURSEUR 5
+#define REP_OK 1              ///< Réponse OK
+#define REP_ERREUR 2          ///< Réponse d'erreur
+#define REP_ERREUR_FICHIER 3  ///< Réponse d'erreur : fichier non trouvé
+#define REP_ERREUR_MEMOIRE 4  ///< Réponse d'erreur : mémoire insuffisante
+#define REP_ERREUR_CURSEUR 5  ///< Réponse d'erreur : curseur invalide
 
-/**
- * @brief Taille d'un block
- * @details La taille d'un block est définie par la macro suivante :
- * @var TAILLE_BLOCK Taille d'un block
- * @def TAILLE_BLOCK 8192
- */
-#define TAILLE_BLOCK 8192
+#define TAILLE_BLOCK 8192 ///< Taille d'un block de données (etape 2)
 
 /**
  * \struct Requete
@@ -136,13 +106,8 @@ unsigned int reception_fichier(int clientfd, int f, unsigned int taille);
  */
 void envoie_fichier(int clientfd, Reponse *rep, int f, unsigned int taille);
 
-/**
- * @brief Macro pour le nombre d'esclaves
- * @var MAX_SERVERS nombre de serveurs esclaves
- * @def MAX_SERVERS 3
- */
 #ifndef MAX_SERVERS
-#define MAX_SERVERS 3
+#define MAX_SERVERS 3 ///< Nombre de serveurs esclaves
 #endif
 
 /**
