@@ -41,8 +41,8 @@ void Reponse_hton(Reponse *rep);
 
 void Reponse_ntoh(Reponse *rep);
 
-void reception_fichier(int clientfd, int f, unsigned int taille);
+unsigned int reception_fichier(int clientfd, int f, unsigned int taille);
 
-void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille);
+void envoie_fichier(int clientfd, Reponse *rep, int f, unsigned int taille);
 
 #endif //TP_FTP_SR_2023_PROTOCOLES_H

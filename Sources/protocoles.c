@@ -32,7 +32,7 @@ void Reponse_ntoh(Reponse *rep) {
     rep->res_len = ntohl(rep->res_len);
 }
 
-void reception_fichier(int clientfd, int f, unsigned int taille) {
+unsigned int reception_fichier(int clientfd, int f, unsigned int taille) {
     char res[TAILLE_BLOCK];
 #ifdef DEBUG
     fprintf(stderr, "Réception du fichier (taille = %d)\n", taille);
@@ -41,7 +41,10 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
 #ifdef DEBUG
         fprintf(stderr, "Réception d'un paquet (taille = %d)\n", TAILLE_BLOCK);
 #endif
-        rio_readn(clientfd, res, TAILLE_BLOCK);
+        if (rio_readn(clientfd, res, TAILLE_BLOCK) == 0) {
+            Close(clientfd);
+            return taille;
+        }
         Write(f, res, TAILLE_BLOCK);
         taille -= TAILLE_BLOCK;
     }
@@ -49,18 +52,22 @@ void reception_fichier(int clientfd, int f, unsigned int taille) {
 #ifdef DEBUG
     fprintf(stderr, "Réception du dernier paquet (taille = %d)\n", taille);
 #endif
-    rio_readn(clientfd, res, taille);
+    if (rio_readn(clientfd, res, taille) == 0) {
+        Close(clientfd);
+        return taille;
+    }
     Write(f, res, taille);
+    return 0;
 }
 
-void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille) {
+void envoie_fichier(int clientfd, Reponse *rep, int f, unsigned int taille) {
 #ifdef DEBUG
     fprintf(stderr, "Envoi du fichier (taille = %d)\n", taille);
 #endif
     char res[TAILLE_BLOCK];
     // Envoie de la structure de réponse (code + taille)
-    Reponse_hton(&rep);
-    rio_writen(clientfd, &rep, sizeof(Reponse));
+    Reponse_hton(rep);
+    rio_writen(clientfd, rep, sizeof(Reponse));
     while (taille > 0) {
 #ifdef DEBUG
         fprintf(stderr, "taille = %d\n", taille);
