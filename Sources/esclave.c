@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define NUMERO_SERVEUR 0
+#define MAX_NAME_LEN 256
 
 int volatile sigpipe0 = 0;
 
@@ -21,18 +21,34 @@ int main(int argc, char **argv) {
     Signal(SIGPIPE, handler_SIGPIPE1);
     int clientfd;
     char *master_host = master_ip;
+    int port;
 
-    if (argc != 1) {
-        fprintf(stderr, "usage: %s\n", argv[0]);
+    if (argc != 2) {
+        fprintf(stderr, "usage: %s <host>\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
 
     /* Se connecte au serveur maître */
     clientfd = Open_clientfd(master_host, PORT);
 
-    /* Lui envoie un message pour dire qu'il existe */
-    uint8_t numero = NUMERO_SERVEUR;
-    rio_writen(clientfd, &numero, sizeof(numero));
+    /* Lui envoie son IP et son port pour dire qu'il existe */
+    port = atoi(argv[1]);
+
+    Serveur serv;
+    serv.port = port;
+
+    struct sockaddr_in clientaddr;
+    char client_ip_string[INET_ADDRSTRLEN];
+
+    /* determine the textual representation of the client's IP address */
+    Inet_ntop(AF_INET, &clientaddr.sin_addr, client_ip_string, INET_ADDRSTRLEN);
+
+    //printf("server connected to %s (%s)\n", client_hostname, client_ip_string);
+
+    strcpy(serv.ip, client_ip_string);
+
+    /* Envoie ses données au serveur maître */
+    rio_writen(clientfd, &serv, sizeof(serv));
 
     /* Ferme la connexion */
     Close(clientfd);
@@ -40,7 +56,7 @@ int main(int argc, char **argv) {
     /* Attend la connexion d'un client */
     int listenfd, connfd;
 
-    listenfd = Open_listenfd(PORT1);
+    listenfd = Open_listenfd(port);
 
     while (1) {
         sigpipe0 = 0;

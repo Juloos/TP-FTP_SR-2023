@@ -26,22 +26,16 @@ ifdef DEBUG
 	CPPFLAGS+=-DDEBUG
 endif
 
-SRCS1 = $(wildcard $(SRCDIR)/*[^CLIENT^1^2^3].c)
+SRCS1 = $(wildcard $(SRCDIR)/*[^CLIENT^e].c)
 OBJS1 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS1))
 
-SRCS2 = $(wildcard $(SRCDIR)/[^FTP]*[^1^2^3].c)
+SRCS2 = $(wildcard $(SRCDIR)/[^FTP]*[^e].c)
 OBJS2 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS2))
 
-SRCS_ESCLAVE1 = $(wildcard $(SRCDIR)/serveurs_esclaves.c $(SRCDIR)/csapp.c $(SRCDIR)/protocoles.c $(SRCDIR)/esclave1.c)
-OBJS_ESCLAVE1 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS_ESCLAVE1))
+SRCS_ESCLAVE = $(wildcard $(SRCDIR)/serveurs_esclaves.c $(SRCDIR)/csapp.c $(SRCDIR)/protocoles.c $(SRCDIR)/esclave.c)
+OBJS_ESCLAVE = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS_ESCLAVE))
 
-SRCS_ESCLAVE2 = $(wildcard $(SRCDIR)/serveurs_esclaves.c $(SRCDIR)/csapp.c $(SRCDIR)/protocoles.c $(SRCDIR)/esclave2.c)
-OBJS_ESCLAVE2 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS_ESCLAVE2))
-
-SRCS_ESCLAVE3 = $(wildcard $(SRCDIR)/serveurs_esclaves.c $(SRCDIR)/csapp.c $(SRCDIR)/protocoles.c $(SRCDIR)/esclave3.c)
-OBJS_ESCLAVE3 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS_ESCLAVE3))
-
-PROGS = $(BINDIR)/FTP $(BINDIR)/CLIENT $(BINDIR)/esclave1 $(BINDIR)/esclave2 $(BINDIR)/esclave3
+PROGS = $(BINDIR)/FTP $(BINDIR)/CLIENT $(BINDIR)/esclave
 
 all: $(PROGS)
 
@@ -54,6 +48,9 @@ $(BINDIR)/CLIENT: $(OBJS2)
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
+$(BINDIR)/esclave: $(OBJS_ESCLAVE)
+	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
+
 ftp:
 	@make > /dev/null
 	$(BINDIR)/FTP
@@ -61,15 +58,6 @@ ftp:
 client:
 	@make > /dev/null
 	$(BINDIR)/CLIENT localhost
-
-$(BINDIR)/esclave1: $(OBJS_ESCLAVE1)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
-
-$(BINDIR)/esclave2: $(OBJS_ESCLAVE2)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
-
-$(BINDIR)/esclave3: $(OBJS_ESCLAVE3)
-	$(CC) -o $@ $(LDFLAGS) $^ $(LIBS)
 
 clean :
 	-@rm -r $(OBJDIR)/*.o $(SRCDIR)/*~ $(BINDIR)/* 2>/dev/null || true
