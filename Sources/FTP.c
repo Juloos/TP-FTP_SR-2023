@@ -3,7 +3,10 @@
 #include "../Headers/protocoles.h"
 
 #define PORT 4242
+
+#ifndef NB_PROC
 #define NB_PROC 5
+#endif
 
 pid_t ptab[NB_PROC];
 

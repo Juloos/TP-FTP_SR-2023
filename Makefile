@@ -30,6 +30,10 @@ OBJS2 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS2))
 
 PROGS = $(BINDIR)/FTP $(BINDIR)/CLIENT
 
+ifdef NB_PROC
+	CPPFLAGS+=-DNB_PROC=$(NB_PROC)
+endif
+
 all: $(PROGS)
 
 $(BINDIR)/FTP: $(OBJS1)
