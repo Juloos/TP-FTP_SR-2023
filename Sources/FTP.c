@@ -99,14 +99,12 @@ int main(int argc, char **argv) {
         sigpipe = 0;
         while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
 
-        while (1) {
-            /* Envoie la structure serveur correspondant pour que le client se connecte à l'esclave */
-            rio_writen(connfd, &serveurs[server_courant], sizeof(Serveur));
+        /* Envoie la structure serveur correspondant pour que le client se connecte à l'esclave */
+        rio_writen(connfd, &serveurs[server_courant], sizeof(Serveur));
 
-            /* Ferme la connexion */
-            Close(connfd);
+        /* Ferme la connexion */
+        Close(connfd);
 
-            server_courant = (server_courant + 1) % MAX_SERVERS;
-        }
+        server_courant = (server_courant + 1) % MAX_SERVERS;
     }
 }
