@@ -19,19 +19,6 @@ int numero_port(int numero_esclave) {
     }
 }
 
-char *hostname(int numero_esclave) {
-    switch(numero_esclave) {
-        case 0:
-            return ip_servers[0];
-        case 1:
-            return ip_servers[1];
-        case 2:
-            return ip_servers[2];
-        default:
-            return NULL;
-    }
-}
-
 
 /* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
 void handler_SIGINT(int sig) {
@@ -66,30 +53,22 @@ int main(int argc, char **argv) {
 
     Signal(SIGINT, handler_SIGINT);
 
-    /* Affichage de l'ip */
-    char hostName[256];
-    gethostname(hostName, sizeof(hostName));
-    struct hostent *host1 = gethostbyname(hostName);
-    printf("Serveur : ip = %s\n", inet_ntoa(*(struct in_addr *) host1->h_addr_list[0]));
-
     listenfd = Open_listenfd(PORT);
-
-    for(int i=0; i<MAX_SERVERS; i++) {
-        fprintf(stderr, "port de l'esclave %d = %d\n", i+1, numero_port(i));
-    }
 
     /* Attend la connexion des serveurs esclaves */
     while (nb_servers < MAX_SERVERS) {
         while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
-        uint8_t numero;
-        if (rio_readn(connfd, &numero, sizeof(numero)) == 0) {
+        Serveur server;
+        if (rio_readn(connfd, &server, sizeof(Serveur)) == 0) {
             fprintf(stderr, "Serveur : Un serveur esclave s'est déconnecté avant identification\n");
             continue;
         }
-        serveurs[numero].port = numero_port(numero);
-        fprintf(stderr, "Serveur : port de l'esclave %d = %d\n", numero, serveurs[numero].port);
-        strcpy(serveurs[numero].ip, hostname(numero));
-        printf("Serveur : serveur esclave %d connecté\n", numero);
+        serveurs[nb_servers].port = server.port;
+        strcpy(serveurs[nb_servers].ip, ip_servers[nb_servers]);
+#ifdef DEBUG
+        fprintf(stderr, "Serveur : port de l'esclave %d = %d\n", nb_servers, serveurs[nb_servers].port);
+        fprintf(stderr, "Serveur : serveur esclave %d connecté\n", numero);
+#endif
         Close(connfd);
         nb_servers++;
     }

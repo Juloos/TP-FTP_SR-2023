@@ -49,7 +49,7 @@ void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille);
 
 typedef struct {
     int port;
-    char ip[MAXLINE];
+    char ip[16];
 } Serveur;
 
 #endif //TP_FTP_SR_2023_PROTOCOLES_H
