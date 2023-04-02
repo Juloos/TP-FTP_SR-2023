@@ -67,6 +67,9 @@ client:
 	@make > /dev/null
 	$(BINDIR)/CLIENT localhost
 
+doc:
+	doxygen Documentation/Doxyfile
+
 clean :
 	-@rm -r $(OBJDIR)/*.o $(SRCDIR)/*~ $(BINDIR)/* 2>/dev/null || true
 	@echo All is removed
