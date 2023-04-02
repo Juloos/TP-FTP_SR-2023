@@ -8,17 +8,41 @@
 
 #define MAX_NAME_LEN 256
 
-int volatile sigpipe0 = 0;
+int volatile sigpipe = 0;
 
 char *master_ip = "127.0.0.1";
 
-void handler_SIGPIPE1(int sig) {
-    printf("Le client a fermé la connexion\n");
-    sigpipe0 = 1;
+#define NB_PROC 5
+pid_t ptab[NB_PROC];
+
+void handler_SIGCHLD(int sig) {
+    while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
+void handler_SIGINT(int sig) {
+    Signal(SIGCHLD, SIG_DFL);
+    for (int i = 0; i < NB_PROC; i++)
+        kill(ptab[i], SIGKILL);
+    for (int i = 0; i < NB_PROC; i++)
+        wait(NULL);
+    exit(EXIT_SUCCESS);
+}
+
+void handler_SIGPIPE(int sig) {
+    printf("Le client a fermé la connexion\n");
+    sigpipe = 1;
+}
+
+int creerNfils(int nbFils) {
+    for (int i = 0; i < nbFils; i++)
+        if ((ptab[i] = Fork()) == 0)
+            return CREERNFILS_CHILD;
+    return CREERNFILS_PARENT;
+}
+
+
 int main(int argc, char **argv) {
-    Signal(SIGPIPE, handler_SIGPIPE1);
+    Signal(SIGPIPE, handler_SIGPIPE);
     int clientfd;
     char *master_host = master_ip;
     int port;
@@ -55,14 +79,28 @@ int main(int argc, char **argv) {
 
     listenfd = Open_listenfd(port);
 
-    while (1) {
-        sigpipe0 = 0;
-        while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
+    Signal(SIGCHLD, handler_SIGCHLD);
+    Signal(SIGINT, handler_SIGINT);
+
+
+    if (creerNfils(NB_PROC) == CREERNFILS_CHILD) {
+        // Child
+        Signal(SIGCHLD, SIG_DFL);
+        Signal(SIGINT, SIG_DFL);
+        Signal(SIGPIPE, handler_SIGPIPE);
 
         while (1) {
-            /* Si le client ferme la connexion par un bye ou une erreur */
-            if (server_body(connfd) == SERVER_BODY_BYE || sigpipe0) break;
+            sigpipe = 0;
+            while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
+
+            while (1) {
+                /* Si le client ferme la connexion par un bye ou une erreur */
+                if (server_body(connfd) == SERVER_BODY_BYE || sigpipe) break;
+            }
         }
     }
-    return 0;
+    // Parent
+    while (1) {
+        Pause();
+    }
 }

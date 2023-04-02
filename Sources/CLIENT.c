@@ -122,6 +122,9 @@ int lire_commande(char *buf, Requete *req, int couleur) {
         if ((buf[3] == ' ' && len == 4) || len == 3) {
             fprintf(stderr, "Il manque un argument\n");
             return LIRE_COMMANDE_ERR;
+        } else if (buf[3] != ' ') {
+            fprintf(stderr, "Commande inconnue\n");
+            return LIRE_COMMANDE_ERR;
         }
         req->code = OP_GET;
         req->arg_len = len - 3;
