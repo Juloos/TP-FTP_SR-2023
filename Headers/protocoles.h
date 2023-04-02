@@ -45,6 +45,19 @@ typedef struct {
 } Reponse;
 
 /**
+ * \struct
+ * @brief Structure Serveur
+ * @details Structure permettant l'échange d'information sur le serveur esclave
+ * @var port Port associé à l'adress IP d'un serveur
+ * @var ip IP d'un serveur
+ */
+typedef struct {
+    uint16_t port;
+    char ip[16];
+} Serveur;
+
+
+/**
  * @brief Initialisation d'une requête
  * @details Initialise une requête avec le code OP_BYE et les champs arg_len et cursor à 0
  * @param req Requête à initialiser
@@ -109,17 +122,5 @@ void envoie_fichier(int clientfd, Reponse *rep, int f, unsigned int taille);
 #ifndef MAX_SERVERS
 #define MAX_SERVERS 3 ///< Nombre de serveurs esclaves
 #endif
-
-/**
- * \struct
- * @brief Structure Serveur
- * @details Structure permettant l'échange d'information sur le serveur esclave
- * @var port Port associé à l'adress IP d'un serveur
- * @var ip IP d'un serveur
- */
-typedef struct {
-    uint16_t port;
-    char ip[16];
-} Serveur;
 
 #endif //TP_FTP_SR_2023_PROTOCOLES_H
