@@ -40,11 +40,6 @@
 #endif
 
 /**
- * @brief Variable contenant l'adresse IP du serveur maître
- */
-extern char *master_ip;
-
-/**
  * @brief Code principal exécuté par le serveur
  * @param connfd Socket de connection
  * @return Code de retour en fonction du résultat(ok, erreur, bye)

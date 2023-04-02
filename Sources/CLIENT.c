@@ -197,6 +197,7 @@ int main(int argc, char **argv) {
     Close(clientfd);
 
     /* Connexion à l'esclave */
+    serv.port = ntohs(serv.port);
     fprintf(stderr, "Connexion à l'esclave %s:%d\n", serv.ip, serv.port);
     clientfd = Open_clientfd(serv.ip, serv.port);
 

@@ -2,18 +2,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_NAME_LEN 256
-
+/**
+ * @brief Variable globale pour savoir si le client a fermé la connexion
+ * @param sigpipe 0 si le client n'a pas fermé la connexion, 1 sinon
+ */
 int volatile sigpipe = 0;
 
-char *master_ip = "localhost";
-
+/**
+ * @brief Tableau de processus fils
+ * @param ptab Tableau de processus fils
+ */
 pid_t ptab[NB_PROC];
 
+/**
+ * @brief Handler pour le signal SIGCHLD
+ * @param sig Signal SIGCHLD
+ */
 void handler_SIGCHLD(int sig) {
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
+/**
+ * @brief Handler pour le signal SIGINT
+ * @param sig Signal SIGINT
+ */
 void handler_SIGINT(int sig) {
     Signal(SIGCHLD, SIG_DFL);
     for (int i = 0; i < NB_PROC; i++)
@@ -23,11 +35,20 @@ void handler_SIGINT(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+/**
+ * @brief Handler pour le signal SIGPIPE
+ * @param sig Signal SIGPIPE
+ */
 void handler_SIGPIPE(int sig) {
     printf("Le client a fermé la connexion\n");
     sigpipe = 1;
 }
 
+/**
+ * @brief Créer un nombre de fils
+ * @param nbFils Nombre de fils à créer
+ * @return CREERNFILS_CHILD si le processus est un fils, CREERNFILS_PARENT sinon
+ */
 int creerNfils(int nbFils) {
     for (int i = 0; i < nbFils; i++)
         if ((ptab[i] = Fork()) == 0)
@@ -35,23 +56,25 @@ int creerNfils(int nbFils) {
     return CREERNFILS_PARENT;
 }
 
-
 int main(int argc, char **argv) {
     Signal(SIGPIPE, handler_SIGPIPE);
     int clientfd;
-    char *master_host = master_ip;
-    int port;
+    char *master_host;
+    uint16_t port;
 
-    if (argc != 2) {
-        fprintf(stderr, "usage: %s <port>\n", argv[0]);
+    if (argc != 3) {
+        fprintf(stderr, "usage: %s <host> <port>\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
+
+    /* Récupération de l'@ IP du serveur */
+    master_host = argv[1];
 
     /* Se connecte au serveur maître */
     clientfd = Open_clientfd(master_host, PORT);
 
     /* Lui envoie son IP et son port pour dire qu'il existe */
-    port = atoi(argv[1]);
+    port = atoi(argv[2]);
 
     Serveur serv;
     serv.port = port;

@@ -152,7 +152,7 @@ void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille);
  * @var ip IP d'un serveur
  */
 typedef struct {
-    int port;
+    uint16_t port;
     char ip[16];
 } Serveur;
 

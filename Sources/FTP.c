@@ -82,11 +82,20 @@ int main(int argc, char **argv) {
         while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
 
         /* Envoie la structure serveur correspondant pour que le client se connecte à l'esclave */
+        serveurs[server_courant].port = htons(serveurs[server_courant].port);
         rio_writen(connfd, &serveurs[server_courant], sizeof(Serveur));
+        serveurs[server_courant].port = ntohs(serveurs[server_courant].port);
 
         /* Ferme la connexion */
         Close(connfd);
 
+#ifdef DEBUG
+        for (int i = 0; i < MAX_SERVERS; i++){
+            fprintf(stderr, "Serveur %d : %s:%d\n", i, serveurs[i].ip, ntohs(serveurs[i].port));
+        }
+#endif
+
+        // On change d'esclave courant
         server_courant = (server_courant + 1) % MAX_SERVERS;
     }
 }
