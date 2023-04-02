@@ -3,11 +3,34 @@
 
 int volatile sigpipe = 0;
 
+Serveur serveurs[MAX_SERVERS];
+
 /* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
 void handler_SIGINT(int sig) {
     printf("Serveur: fermeture du serveur maître\n");
+    /* Se connecter à tous les esclaves et leur envoyer bye */
+    int nb_serveurs = 0;
+    while (nb_serveurs < MAX_SERVERS) {
+        for(int i = 0; i < MAX_SERVERS; i++) {
+            int connfd = Open_clientfd(serveurs[i].ip, serveurs[i].port);
+            if (connfd == -1) {
+                continue;
+            }
+            fprintf(stderr, "Serveur: connexion au serveur %s:%d\n", serveurs[i].ip, serveurs[i].port);
+            /* Structure requête */
+            Requete req;
+            init_Requete(&req);
+            req.code = OP_TERM;
+            if (rio_writen(connfd, &req, sizeof(Requete)) == -1) {
+                fprintf(stderr, "Serveur: erreur lors de l'envoi du message bye\n");
+                continue;
+            } else {
+                nb_serveurs++;
+            }
+            Close(connfd);
+        }
+    }
     exit(EXIT_SUCCESS);
-    /* Tuer les serveurs esclaves */
 }
 
 void handler_SIGPIPE(int sig) {
@@ -20,8 +43,6 @@ int main(int argc, char **argv) {
     int listenfd, connfd;
     int nb_servers = 0;
     int server_courant = 0;
-
-    Serveur serveurs[MAX_SERVERS];
 
 #ifdef DEBUG
     int n = 1;

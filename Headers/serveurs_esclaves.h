@@ -15,13 +15,13 @@
 
 /**
  * @brief Valeurs de retour de la fonction server_body
- * @def SERVER_BODY_BYE 2
- * @def SERVER_BODY_ERR 1
  * @def SERVER_BODY_OK 0
+ * @def SERVER_BODY_ERR 1
+ * @def SERVER_BODY_BYE 2
  */
-#define SERVER_BODY_BYE 2
-#define SERVER_BODY_ERR 1
 #define SERVER_BODY_OK 0
+#define SERVER_BODY_ERR 1
+#define SERVER_BODY_BYE 2
 
 /**
  * @brief Valeur de retour lors de la création du pool de processus

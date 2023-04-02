@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     int port;
 
     if (argc != 2) {
-        fprintf(stderr, "usage: %s <host>\n", argv[0]);
+        fprintf(stderr, "usage: %s <port>\n", argv[0]);
         exit(EXIT_SUCCESS);
     }
 
@@ -94,7 +94,8 @@ int main(int argc, char **argv) {
 
             while (1) {
                 /* Si le client ferme la connexion par un bye ou une erreur */
-                if (server_body(connfd) == SERVER_BODY_BYE || sigpipe) break;
+                int res = server_body(connfd);
+                if (res == SERVER_BODY_BYE || sigpipe) break;
             }
         }
     }
