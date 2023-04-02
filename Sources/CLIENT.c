@@ -2,18 +2,38 @@
 #include "../Headers/protocoles.h"
 #include "../Headers/client_interaction.h"
 #include <string.h>
-#include <time.h>
 
+/**
+ * @def PORT 4242
+ * @brief Port du serveur maître
+ */
 #define PORT 4242
 
-int couleur = 31;
+/**
+ * @brief Chemin du dossier du client
+ */
 char pathname[MAXLINE];
 
+/**
+ * @brief Couleur du prompt
+ */
+int couleur = 31;
 
+/**
+ * @brief Fonction qui calcule la différence de temps entre deux timeval
+ * @param start structure initialisée avec gettimeofday juste avant le début du téléchargement
+ * @param end structure initialisée avec gettimeofday juste après la fin du téléchargement
+ * @return le temps écoulé entre start et end
+ */
 float time_diff(struct timeval *start, struct timeval *end) {
     return (end->tv_sec - start->tv_sec) + 1e-6 * (end->tv_usec - start->tv_usec);
 }
 
+/**
+ * @brief Fonction qui affiche le prompt
+ * @param buf Buffer dans lequel on stocke la commande
+ * @return La taille de la commande
+ */
 size_t prompt(char *buf) {
     printf("\033[%dm", couleur);
     printf("\033[4mftp>\033[00m ");
@@ -25,7 +45,18 @@ size_t prompt(char *buf) {
     return len;
 }
 
+/**
+ * @brief Macro qui permet de vérifier si la commande est valide
+ * @def LIRE_COMMANDE_ERR (-1)
+ */
 #define LIRE_COMMANDE_ERR (-1)
+
+/**
+ * @brief Fonction qui lit la commande entrée par l'utilisateur
+ * @param buf Buffer dans lequel on stocke la commande
+ * @param req Requete à remplir
+ * @return L'indice de l'argument de la commande dans le buffer ou LIRE_COMMANDE_ERR si la commande est invalide
+ */
 int lire_commande(char *buf, Requete *req) {
     size_t len = prompt(buf);
 
@@ -62,6 +93,14 @@ int lire_commande(char *buf, Requete *req) {
     return argi;
 }
 
+/**
+ * @brief Fonction qui execute la requête
+ * @param clientfd socket de communication avec le serveur
+ * @param req Structure de la requête à exécuter
+ * @param rep Structure de la réponse du serveur
+ * @param filename Nom du fichier à télécharger si le code de la requête est OP_GET
+ * @param start Structure initialisée avec gettimeofday juste avant le début du téléchargement
+ */
 void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, struct timeval start) {
 #ifdef DEBUG
     fprintf(stderr, "Client: exécution de la requête %d, arg_len = %d, cursor = %d\n", req->code, req->arg_len, req->cursor);
@@ -112,6 +151,10 @@ void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, s
     }
 }
 
+/**
+ * @brief Handler qui gère le signal SIGPIPE
+ * @param sig Signal reçu
+ */
 void handler_SIGPIPE(int sig) {
     printf("Le serveur a fermé la connexion\n");
     exit(EXIT_SUCCESS);
@@ -145,6 +188,7 @@ int main(int argc, char **argv) {
     strcat(pathname, "/.client/");
 
     Signal(SIGPIPE, handler_SIGPIPE);
+    /* Connexion au serveur maître pour récupérer le numero de l'esclave */
     clientfd = Open_clientfd(host, PORT);
 
     /* Lecture de l'ip et le port du serveur esclave */
@@ -171,6 +215,7 @@ int main(int argc, char **argv) {
         gettimeofday(&start, NULL);
         envoyer_requete(clientfd, &req, arg);
 
+        /* Erreur avec rio_readn */
         switch (interprete_reponse(clientfd, &rep)) {
             case INTERPRETE_REPONSE_ERR:
                 exit(EXIT_SUCCESS);

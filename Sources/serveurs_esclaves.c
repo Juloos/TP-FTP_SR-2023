@@ -1,6 +1,4 @@
 #include "../Headers/serveurs_esclaves.h"
-#include "../Headers/csapp.h"
-#include "../Headers/protocoles.h"
 #include <stdio.h>
 #include <stdlib.h>
 

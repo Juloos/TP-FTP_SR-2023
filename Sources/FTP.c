@@ -1,11 +1,22 @@
 #include "../Headers/csapp.h"
 #include "../Headers/serveurs_esclaves.h"
 
+/**
+ * @brief Variable globale pour savoir si le client a fermé la connexion
+ * @param sigpipe 0 si le client n'a pas fermé la connexion, 1 sinon
+ */
 int volatile sigpipe = 0;
 
+/**
+ * @brief Tableau de serveurs esclaves
+ * @param serveurs Tableau de serveurs esclaves
+ */
 Serveur serveurs[MAX_SERVERS];
 
-/* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
+/**
+ * @brief Handler pour le signal SIGINT
+ * @param sig Signal SIGINT
+ */
 void handler_SIGINT(int sig) {
     Requete req;
     int clientfd;
@@ -25,6 +36,10 @@ void handler_SIGINT(int sig) {
     exit(EXIT_SUCCESS);
 }
 
+/**
+ * @brief Handler pour le signal SIGPIPE
+ * @param sig Signal SIGPIPE
+ */
 void handler_SIGPIPE(int sig) {
     printf("Le client a fermé la connexion\n");
     sigpipe = 1;
@@ -88,12 +103,6 @@ int main(int argc, char **argv) {
 
         /* Ferme la connexion */
         Close(connfd);
-
-#ifdef DEBUG
-        for (int i = 0; i < MAX_SERVERS; i++){
-            fprintf(stderr, "Serveur %d : %s:%d\n", i, serveurs[i].ip, ntohs(serveurs[i].port));
-        }
-#endif
 
         // On change d'esclave courant
         server_courant = (server_courant + 1) % MAX_SERVERS;
