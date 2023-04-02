@@ -7,29 +7,21 @@ Serveur serveurs[MAX_SERVERS];
 
 /* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
 void handler_SIGINT(int sig) {
-    printf("Serveur: fermeture du serveur maître\n");
-    /* Se connecter à tous les esclaves et leur envoyer bye */
-    int nb_serveurs = 0;
-    while (nb_serveurs < MAX_SERVERS) {
-        for(int i = 0; i < MAX_SERVERS; i++) {
-            int connfd = Open_clientfd(serveurs[i].ip, serveurs[i].port);
-            if (connfd == -1) {
-                continue;
-            }
-            fprintf(stderr, "Serveur: connexion au serveur %s:%d\n", serveurs[i].ip, serveurs[i].port);
-            /* Structure requête */
-            Requete req;
-            init_Requete(&req);
-            req.code = OP_TERM;
-            if (rio_writen(connfd, &req, sizeof(Requete)) == -1) {
-                fprintf(stderr, "Serveur: erreur lors de l'envoi du message bye\n");
-                continue;
-            } else {
-                nb_serveurs++;
-            }
-            Close(connfd);
-        }
+    Requete req;
+    int clientfd;
+
+    init_Requete(&req);
+    req.code = OP_INT;
+    Requete_hton(&req);
+
+    /* Tuer les serveurs esclaves */
+    for (int i = 0; i < MAX_SERVERS; i++) {
+        clientfd = Open_clientfd(serveurs[i].ip, serveurs[i].port);
+        rio_writen(clientfd, &req, sizeof(Requete));
+        Close(clientfd);
     }
+
+    printf("Serveur: fermeture du serveur maître\n");
     exit(EXIT_SUCCESS);
 }
 

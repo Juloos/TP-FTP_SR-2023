@@ -11,12 +11,14 @@
  * @details Les codes des requêtes sont définis par les macros suivantes :
  * @var OP_GET Récupération d'un fichier
  * @var OP_BYE Fermeture de la connexion
- * @var OP_TERM Fermeture du serveur esclave
+ * @var OP_INT Interruption du serveur esclave (envoyé par le serveur maître)
  * @def OP_GET 1
  * @def OP_BYE 2
+ * @def OP_INT 3
  */
 #define OP_GET 1
 #define OP_BYE 2
+#define OP_INT 3
 
 /**
  * @brief Codes des réponses
