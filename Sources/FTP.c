@@ -37,6 +37,10 @@ int main(int argc, char **argv) {
 
     listenfd = Open_listenfd(PORT);
 
+#ifdef DEBUG
+    fprintf(stderr, "Serveur : Serveur maître en attente de connexion des %d esclaves\n", MAX_SERVERS);
+#endif
+
     /* Attend la connexion des serveurs esclaves */
     while (nb_servers < MAX_SERVERS) {
         while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
@@ -49,11 +53,15 @@ int main(int argc, char **argv) {
         strcpy(serveurs[nb_servers].ip, server.ip);
 #ifdef DEBUG
         fprintf(stderr, "Serveur : port de l'esclave %d = %d\n", nb_servers, serveurs[nb_servers].port);
-        fprintf(stderr, "Serveur : serveur esclave %d connecté\n", numero);
+        fprintf(stderr, "Serveur : serveur esclave %d connecté\n", nb_servers);
 #endif
         Close(connfd);
         nb_servers++;
     }
+
+#ifdef DEBUG
+    fprintf(stderr, "Serveur : Tous les serveurs esclaves sont connectés\n");
+#endif
 
     /* Attend la connexion d'un client */
     while (1) {

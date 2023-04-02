@@ -32,6 +32,14 @@
 #define CREERNFILS_CHILD 0
 
 /**
+ * @brief Nombre de processus fils
+ * @def NB_PROC 5
+ */
+#ifndef NB_PROC
+#define NB_PROC 5
+#endif
+
+/**
  * @brief Variable contenant l'adresse IP du serveur maître
  */
 extern char *master_ip;

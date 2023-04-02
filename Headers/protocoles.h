@@ -137,7 +137,9 @@ void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille);
  * @var MAX_SERVERS nombre de serveurs esclaves
  * @def MAX_SERVERS 3
  */
+#ifndef MAX_SERVERS
 #define MAX_SERVERS 3
+#endif
 
 /**
  * \struct

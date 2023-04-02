@@ -26,6 +26,14 @@ ifdef DEBUG
 	CPPFLAGS+=-DDEBUG
 endif
 
+ifdef MAX_SERVERS
+	CPPFLAGS+=-DMAX_SERVERS=$(MAX_SERVERS)
+endif
+
+ifdef NB_PROC
+	CPPFLAGS+=-DNB_PROC=$(NB_PROC)
+endif
+
 SRCS1 = $(wildcard $(SRCDIR)/*[^CLIENT^e].c)
 OBJS1 = $(patsubst $(SRCDIR)/%.c,$(OBJDIR)/%.o,$(SRCS1))
 

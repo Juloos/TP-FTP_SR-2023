@@ -12,7 +12,6 @@ int volatile sigpipe = 0;
 
 char *master_ip = "127.0.0.1";
 
-#define NB_PROC 5
 pid_t ptab[NB_PROC];
 
 void handler_SIGCHLD(int sig) {
@@ -82,7 +81,7 @@ int main(int argc, char **argv) {
     Signal(SIGCHLD, handler_SIGCHLD);
     Signal(SIGINT, handler_SIGINT);
 
-
+    /* Création de 5 fils */
     if (creerNfils(NB_PROC) == CREERNFILS_CHILD) {
         // Child
         Signal(SIGCHLD, SIG_DFL);
