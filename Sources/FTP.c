@@ -6,20 +6,6 @@ int volatile sigpipe = 0;
 /* Même machine pour l'instant */
 char *ip_servers[MAX_SERVERS] = {"127.0.0.1", "127.0.0.1", "127.0.0.1"};
 
-int numero_port(int numero_esclave) {
-    switch(numero_esclave) {
-        case 0:
-            return PORT1;
-        case 1:
-            return PORT2;
-        case 2:
-            return PORT3;
-        default:
-            return -1;
-    }
-}
-
-
 /* TODO : a modifier pour envoyer ce signal à tous les serveurs esclaves */
 void handler_SIGINT(int sig) {
     printf("Serveur: fermeture du serveur maître\n");

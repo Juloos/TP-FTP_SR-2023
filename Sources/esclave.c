@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define MAX_NAME_LEN 256
-
 int volatile sigpipe0 = 0;
 
 char *master_ip = "127.0.0.1";
