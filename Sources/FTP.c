@@ -27,9 +27,10 @@ void handler_SIGINT(int sig) {
 
     /* Tuer les serveurs esclaves */
     for (int i = 0; i < MAX_SERVERS; i++) {
-        clientfd = Open_clientfd(serveurs[i].ip, serveurs[i].port);
-        rio_writen(clientfd, &req, sizeof(Requete));
-        Close(clientfd);
+        if ((clientfd = open_clientfd(serveurs[i].ip, serveurs[i].port)) != -1) {
+            rio_writen(clientfd, &req, sizeof(Requete));
+            Close(clientfd);
+        }
     }
 
     printf("Serveur: fermeture du serveur maître\n");
