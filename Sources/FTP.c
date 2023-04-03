@@ -66,24 +66,19 @@ int main(int argc, char **argv) {
 
     listenfd = Open_listenfd(PORT);
 
-#ifdef DEBUG
-    fprintf(stderr, "Serveur : Serveur maître en attente de connexion des %d esclaves\n", MAX_SERVERS);
-#endif
+    printf("En attente de connexion des %d esclaves\n", MAX_SERVERS);
 
     /* Attend la connexion des serveurs esclaves */
     while (nb_servers < MAX_SERVERS) {
         while ((connfd = Accept(listenfd, NULL, NULL)) == -1);
         Serveur server;
         if (rio_readn(connfd, &server, sizeof(Serveur)) == 0) {
-            fprintf(stderr, "Serveur : Un serveur esclave s'est déconnecté avant identification\n");
+            fprintf(stderr, "Un serveur esclave s'est déconnecté avant identification\n");
             continue;
         }
         serveurs[nb_servers].port = server.port;
         strcpy(serveurs[nb_servers].ip, server.ip);
-#ifdef DEBUG
-        fprintf(stderr, "Serveur : port de l'esclave %d = %d\n", nb_servers, serveurs[nb_servers].port);
-        fprintf(stderr, "Serveur : serveur esclave %d connecté\n", nb_servers);
-#endif
+        fprintf(stderr, "Nouvel esclave connecté: N°%d, port %d\n", nb_servers, serveurs[nb_servers].port);
         Close(connfd);
         nb_servers++;
     }
