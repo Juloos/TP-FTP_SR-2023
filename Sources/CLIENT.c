@@ -92,22 +92,25 @@ void execute_requete(int clientfd, Requete *req, Reponse *rep, char *filename, s
                     file = open(tmpname, O_CREAT | O_WRONLY | O_TRUNC, 0700);
                 }
                 unsigned int taille_restante = reception_fichier(clientfd, file, rep->res_len);
+                gettimeofday(&end, NULL);
                 Close(file);
 
-                gettimeofday(&end, NULL);
-                printf("%u bytes transferred in %.3f sec\n", rep->res_len - taille_restante, time_diff(&start, &end));
-
-                if (rename(tmpname, pathname) == -1) {
-                    perror("rename");
-                    exit(EXIT_FAILURE);
+                if (taille_restante == 0) {
+                    if (rename(tmpname, pathname) == -1) {
+                        perror("rename");
+                        exit(EXIT_FAILURE);
+                    }
+                    printf("File saved as %s\n", pathname);
+                } else {
+                    printf("File transfer interrupted, partial file saved as %s\n", tmpname);
+                    exit(EXIT_SUCCESS);
                 }
-                printf("File saved as %s\n", pathname);
+                printf("%u bytes transferred in %.3f sec\n", rep->res_len - taille_restante, time_diff(&start, &end));
 
                 pathname[strlen(pathname) - strlen(filename)] = '\0';
             }
             break;
         case OP_BYE:
-            Close(clientfd);
             exit(EXIT_SUCCESS);
     }
 }

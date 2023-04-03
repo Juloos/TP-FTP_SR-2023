@@ -33,30 +33,41 @@ void Reponse_ntoh(Reponse *rep) {
 }
 
 unsigned int reception_fichier(int clientfd, int f, unsigned int taille) {
+    char progressbar[81];
+    int i;
+    double pourc = 0.0;
+    for (i = 0; i < 80; i++) progressbar[i] = ' ';
+    progressbar[80] = '\0';
+    printf("[%s]  %5.1f%%\r", progressbar, pourc);
+    i = 0;
+
     char res[TAILLE_BLOCK];
-#ifdef DEBUG
-    fprintf(stderr, "Réception du fichier (taille = %d)\n", taille);
-#endif
-    while (taille >= TAILLE_BLOCK) {
-#ifdef DEBUG
-        fprintf(stderr, "Réception d'un paquet (taille = %d)\n", TAILLE_BLOCK);
-#endif
+    unsigned int taille_restante = taille;
+    while (taille_restante >= TAILLE_BLOCK) {
         if (rio_readn(clientfd, res, TAILLE_BLOCK) == 0) {
+            printf("\n");
             Close(clientfd);
-            return taille;
+            return taille_restante;
         }
         Write(f, res, TAILLE_BLOCK);
-        taille -= TAILLE_BLOCK;
+        taille_restante -= TAILLE_BLOCK;
+
+        // Mise à jour de la barre de progression
+        pourc = 80.0 * (double) (taille - taille_restante) / (double) taille;
+        while (i < pourc)
+            progressbar[i++] = '=';
+        printf("[%s]  %5.1f%%\r", progressbar, pourc * 1.25);
     }
     // Dernier paquet (taille < TAILLE_BLOCK)
-#ifdef DEBUG
-    fprintf(stderr, "Réception du dernier paquet (taille = %d)\n", taille);
-#endif
-    if (rio_readn(clientfd, res, taille) == 0) {
+    if (rio_readn(clientfd, res, taille_restante) == 0) {
+        printf("\n");
         Close(clientfd);
-        return taille;
+        return taille_restante;
     }
-    Write(f, res, taille);
+    Write(f, res, taille_restante);
+    while (i < 80)
+        progressbar[i++] = '=';
+    printf("[%s]  %5.1f%%\n", progressbar, 100.0);
     return 0;
 }
 
