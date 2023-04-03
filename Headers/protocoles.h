@@ -122,18 +122,19 @@ void Reponse_ntoh(Reponse *rep);
  * @param clientfd Socket du client
  * @param f Descripteur du fichier à écrire
  * @param taille Taille du fichier
+ * @return Nombre d'octets restants (en cas d'interruption)
  */
-void reception_fichier(int clientfd, int f, unsigned int taille);
+unsigned int reception_fichier(int clientfd, int f, unsigned int taille);
 
 /**
  * @brief Envoi d'un fichier
  * @details Envoi d'un fichier vers un client
- * @param rep Réponse à envoyer
  * @param clientfd Socket du client
+ * @param rep Réponse à envoyer
  * @param f Descripteur du fichier à envoyer
  * @param taille Taille du fichier
  */
-void envoie_fichier(Reponse rep, int clientfd, int f, unsigned int taille);
+void envoie_fichier(int clientfd, Reponse *rep, int f, unsigned int taille);
 
 /**
  * @brief Macro pour le nombre d'esclaves

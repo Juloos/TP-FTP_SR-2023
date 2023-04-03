@@ -113,8 +113,7 @@ int main(int argc, char **argv) {
 
             while (1) {
                 /* Si le client ferme la connexion par un bye ou une erreur */
-                int res = server_body(connfd);
-                if (res == SERVER_BODY_BYE || sigpipe) break;
+                if (server_body(connfd) == SERVER_BODY_BYE || sigpipe) break;
             }
         }
     }

@@ -70,7 +70,7 @@ int server_body(int connfd) {
             }
             rep.res_len = taille;
 
-            envoie_fichier(rep, connfd, f, taille);
+            envoie_fichier(connfd, &rep, f, taille);
 
             Close(f);
             break;
