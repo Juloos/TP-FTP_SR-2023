@@ -1,7 +1,3 @@
-//
-// Created by tom on 02/04/23.
-//
-
 #include "../Headers/serveurs_esclaves.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +6,7 @@
 
 int volatile sigpipe = 0;
 
-char *master_ip = "127.0.0.1";
+char *master_ip = "localhost";
 
 pid_t ptab[NB_PROC];
 

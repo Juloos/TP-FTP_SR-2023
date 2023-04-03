@@ -1,6 +1,3 @@
-//
-// Created by tom on 02/04/23.
-//
 #include "../Headers/serveurs_esclaves.h"
 #include "../Headers/csapp.h"
 #include "../Headers/protocoles.h"
@@ -86,6 +83,13 @@ int server_body(int connfd) {
             Reponse_hton(&rep);
             rio_writen(connfd, &rep, sizeof(Reponse));
             Close(connfd);
+            return SERVER_BODY_BYE;
+
+        case OP_INT:
+#ifdef DEBUG
+            fprintf(stderr, "Requete: INT\n");
+#endif
+            Kill(getppid(), SIGINT);
             return SERVER_BODY_BYE;
     }
     return SERVER_BODY_OK;
